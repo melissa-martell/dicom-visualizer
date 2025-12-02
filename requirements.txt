@@ -1,0 +1,8 @@
+Flask
+pydicom
+numpy 
+pillow
+pylibjpeg
+os
+pathlib
+time

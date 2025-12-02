@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Upload
+{% endblock %}
+
+{% block main %}
+
+    <form id="upload-form">
+        <label for="dicom-file">Upload your DICOM image:</label>
+        <input type="file" id="dicom-file" name="file" accept=".dcm">
+        <button type="submit">Upload and Analys</button>
+    </form>
+
+{% endblock %}
