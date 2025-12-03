@@ -6,10 +6,12 @@
 
 {% block main %}
 
-    <form id="upload-form">
-        <label for="dicom-file">Upload your DICOM image:</label>
-        <input type="file" id="dicom-file" name="file" accept=".dcm">
-        <button type="submit">Upload and Analys</button>
+    <form method="POST" action="/upload" enctype="multipart/form-data">
+        <input type="file" name="dicom_file" accept=".dcm">
+        <input type="submit" value="Upload">
     </form>
 
+    {% if error %}
+        <p>Error: {{ error }}</p>
+    {% endif %}
 {% endblock %}
