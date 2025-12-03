@@ -8,12 +8,22 @@
     <li class="nav-item">
         <a class="nav-link active" aria-current="page" href="/">Home</a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link active" aria-current="page" href="/export">Export as PNG</a>
+    </li>
 {% endblock %}
 
 {% block main %}
     <img src="data:image/png;base64,{{ image_data }}" 
          alt="Imagen DICOM"
+         id="image"
          style="max-width: 100%; height: auto;">
     
     <p>Imagen procesada desde archivo DICOM</p>
 {% endblock %}
+
+{% if export %}
+    <script>
+        alert("Image exported succesfully")
+    </script>
+{% endif %}
