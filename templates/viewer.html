@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Upload
+{% endblock %}
+
+{% block main %}
+    <img src="data:image/png;base64,{{ image_data }}" 
+         alt="Imagen DICOM"
+         style="max-width: 100%; height: auto;">
+    
+    <p>Imagen procesada desde archivo DICOM</p>
+{% endblock %}
