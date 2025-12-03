@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Upload
+{% endblock %}
+
+{% block main %}
+    <h1>Welcome to DICOM Vista!</h1>
+    <form id="upload-form" action="/index" method="post">
+        <input type="hidden" id="dicom-file" name="upload" value="upload">
+        <button type="submit">Upload File</button>
+    </form>
+{% endblock %}
