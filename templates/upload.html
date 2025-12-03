@@ -4,6 +4,12 @@
     Upload
 {% endblock %}
 
+{% block nav_item %}
+    <li class="nav-item">
+        <a class="nav-link active" aria-current="page" href="/">Home</a>
+    </li>
+{% endblock %}
+
 {% block main %}
 
     <form method="POST" action="/upload" enctype="multipart/form-data">
