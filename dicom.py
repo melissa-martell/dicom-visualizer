@@ -192,7 +192,7 @@ class DicomProcessor:
             return None
 
         # 2. Obtener ruta de la carpeta Downloads
-        downloads_path = self._get_downloads_folder()
+        downloads_path = _get_downloads_folder()
 
         # 3. Crear nombre de archivo si no se proporciona
         timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -210,16 +210,14 @@ class DicomProcessor:
             print(f"✗ Error guardando imagen: {e}")
             return None
 
-    def _get_downloads_folder(self):
+def _get_downloads_folder():
 
-        # Para Windows
-        if os.name == 'nt':
-            downloads = os.path.join(os.environ['USERPROFILE'], 'Downloads')
-        # Para macOS/Linux
-        else:
-            downloads = os.path.join(os.path.expanduser('~'), 'Downloads')
-
-        # Crear carpeta si no existe
-        os.makedirs(downloads, exist_ok=True)
-
-        return downloads
+    # Para Windows
+    if os.name == 'nt':
+        downloads = os.path.join(os.environ['USERPROFILE'], 'Downloads')
+    # Para macOS/Linux
+    else:
+        downloads = os.path.join(os.path.expanduser('~'), 'Downloads')
+    # Crear carpeta si no existe
+    os.makedirs(downloads, exist_ok=True)
+    return downloads
