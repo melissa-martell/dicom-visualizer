@@ -1,11 +1,12 @@
-from flask import Flask, request, render_template
+from flask import Flask, session, request, render_template
+from flask_session import Session
 import os
-import io
-import base64
-from dicom import DicomProcessor, _get_downloads_folder
+from dicom import DicomProcessor, _get_downloads_folder, bytes_to_base64
+import secrets
 
 # Configure application
 app = Flask(__name__)
+app.secret_key = secrets.token_hex(32)
 
 @app.route("/")
 def index():
@@ -37,19 +38,51 @@ def upload():
         try:
             processor = DicomProcessor(filepath)
             if processor.load_dicom():
-                processed_image = processor.process_slice_to_image()
+                slice_index = 0
+                processed_image = processor.process_slice_to_image(slice_index=slice_index)
 
-                buffered = io.BytesIO()
-                processed_image.save(buffered, format="PNG")
-                image_bytes = buffered.getvalue()
-                img_str = base64.b64encode(image_bytes).decode('utf-8')
-                
-                return render_template("viewer.html", image_data=img_str)
+                img_str = bytes_to_base64(processed_image)
+
+                 # GUARDAR EN SESIÓN (clave para exportar después)
+                session['dicom_filepath'] = filepath
+                session['original_filename'] = dicom_file.filename
+
+                return render_template("viewer.html", image_data=img_str, filename=dicom_file.filename)
             else:
                 return render_template("error.html", error_name="Could not read file")
 
         finally:
-            if os.path.exists(filepath):
-                os.remove(filepath)
+            pass
     else:
         return render_template("upload.html")
+
+
+app.route("/export", methods=["POST"])
+def export():
+    if 'dicom_filepath' not in session:
+        return "Please upload a DICOM file first", 400
+    
+    session['slice_index'] = request.form.get('slice_index')
+    session['window_center'] = request.form.get('window_center')
+    session['window_width'] = request.form.get('window_width')
+
+    filepath = session('dicom_filepath')
+
+     # Verificar que el archivo todavía existe
+    if not os.path.exists(filepath):
+        session.clear()  # Limpiar sesión obsoleta
+        return "Your upload expired. Please upload again.", 400
+    
+     # Crear NUEVO processor (no usar el viejo)
+    processor = DicomProcessor(filepath)
+    if not processor.load_dicom():
+        return "Error loading DICOM file", 500
+    
+    # Llamar a export_to_downloads
+    export_path = processor.export_to_downloads(
+        slice_index=session['slice_index'],
+        window_center=session['window_center'],  # O usa valores de la sesión si tienes
+        window_width=session['window_width']
+    )
+
+    return render_template("viewer.html", export=export_path)
