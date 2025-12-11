@@ -46,8 +46,9 @@ def upload():
                  # GUARDAR EN SESIÓN (clave para exportar después)
                 session['dicom_filepath'] = filepath
                 session['original_filename'] = dicom_file.filename
+                session['total_slices'] = int(processor.get_total_slices())
 
-                return render_template("viewer.html", image_data=img_str, filename=dicom_file.filename)
+                return render_template("viewer.html", image_data=img_str, filename=dicom_file.filename, total_slices=session['total_slices'])
             else:
                 return render_template("error.html", error_name="Could not read file")
 
@@ -57,16 +58,16 @@ def upload():
         return render_template("upload.html")
 
 
-app.route("/export", methods=["POST"])
+@app.route("/export", methods=["POST"])
 def export():
     if 'dicom_filepath' not in session:
         return "Please upload a DICOM file first", 400
     
-    session['slice_index'] = request.form.get('slice_index')
-    session['window_center'] = request.form.get('window_center')
-    session['window_width'] = request.form.get('window_width')
+    session['slice_index'] = int(request.form.get('slice_index'))
+    session['window_center'] = int(request.form.get('window_center'))
+    session['window_width'] = int(request.form.get('window_width'))
 
-    filepath = session('dicom_filepath')
+    filepath = session['dicom_filepath']
 
      # Verificar que el archivo todavía existe
     if not os.path.exists(filepath):
@@ -85,4 +86,4 @@ def export():
         window_width=session['window_width']
     )
 
-    return render_template("viewer.html", export=export_path)
+    return True
