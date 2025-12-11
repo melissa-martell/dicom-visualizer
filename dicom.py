@@ -185,26 +185,32 @@ class DicomProcessor:
 
         return info
 
-def export_to_downloads(image_bytes, slice_index=0, window_center=None, window_width=None):
+    def export_to_downloads(self, slice_index=0, window_center=None, window_width=None):
        
-    if image_bytes is None:
-        print("Error: No se pudo crear la imagen")
-        return None
-    # 2. Obtener ruta de la carpeta Downloads
-    downloads_path = _get_downloads_folder()
-    # 3. Crear nombre de archivo si no se proporciona
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    filename = f"dicom_slice_{slice_index}_{timestamp}.png"
-    # 4. Ruta completa
-    full_path = os.path.join(downloads_path, filename)
-    # 5. Guardar imagen
-    try:
-        image_bytes.save(full_path, format='PNG')
-        print(f"✓ Imagen guardada en: {full_path}")
-        return full_path
-    except Exception as e:
-        print(f"✗ Error guardando imagen: {e}")
-        return None
+        # 1. Obtener imagen procesada
+        image = self.process_slice_to_image(slice_index, window_center, window_width)
+        if image is None:
+            print("Error: No se pudo crear la imagen")
+            return None
+
+        # 2. Obtener ruta de la carpeta Downloads
+        downloads_path = _get_downloads_folder()
+
+        # 3. Crear nombre de archivo si no se proporciona
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = f"dicom_slice_{slice_index}_{timestamp}.png"
+
+        # 4. Ruta completa
+        full_path = os.path.join(downloads_path, filename)
+
+        # 5. Guardar imagen
+        try:
+            image.save(full_path, format='PNG')
+            print(f"✓ Imagen guardada en: {full_path}")
+            return full_path
+        except Exception as e:
+            print(f"✗ Error guardando imagen: {e}")
+            return None
 
 def _get_downloads_folder():
 
