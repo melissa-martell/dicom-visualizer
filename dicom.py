@@ -5,6 +5,8 @@ from PIL import Image
 import os
 from pathlib import Path
 import time
+import io
+import base64
 
 class DicomProcessor:
     def __init__(self, route):
@@ -221,3 +223,10 @@ def _get_downloads_folder():
     # Crear carpeta si no existe
     os.makedirs(downloads, exist_ok=True)
     return downloads
+
+def bytes_to_base64(processed_image):
+    buffered = io.BytesIO()
+    processed_image.save(buffered, format="PNG")
+    image_bytes = buffered.getvalue()
+    img_str = base64.b64encode(image_bytes).decode('utf-8')
+    return img_str
