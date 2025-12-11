@@ -13,10 +13,17 @@
 
 {% block main %}
     <form action="/export" method="post">
-        <p id="text_slice">Slice: <output id="value"></output></p>
-        <input id="slice" name="slice_index" type="range" min="0" max="{{ total_slices - 1 }}" step="1">
-        <input name="window_center" type="range" >
-        <input name="window_width" type="range">
+        <p id="text_slice">Slice: <output id="value1"></output></p>
+        <input id="slice" name="slice_index" type="range" min="0" max="{{ total_slices - 1 }}" step="1" value="0">
+        
+        <p id="window_center_label">Window Center (Brigth): <output id="value2"></output></p>
+        <input type="range" id="window_center" name="window_center" 
+               min="-1000" max="3000" step="10" value="500">
+        
+        <p id="window_width_label">Window Width (Contrast): <output id="value3"></output></p>
+        <input type="range" id="window_width" name="window_width" 
+               min="1" max="4000" step="10" value="2000">
+        
         <input type="submit" value="Export as PNG">
     </form>
 
@@ -29,19 +36,25 @@
 {% endblock %}
 
 {% block script %}
-
-    {% if export %}
-        <script>
-            alert("Image exported succesfully in {{ export }}")
-        </script>
-    {% endif %}
-
     <script>
-        const value = document.querySelector("#value");
-        const input = document.querySelector("#slice");
-        value.textContent = input.value;
-        input.addEventListener("input", (event) => {
-          value.textContent = event.target.value;
+        const value1 = document.querySelector("#value1");
+        const input1 = document.querySelector("#slice");
+        const value2 = document.querySelector("#value2");
+        const input2 = document.querySelector("#window_center");
+        const value3 = document.querySelector("#value3");
+        const input3 = document.querySelector("#window_width");
+        value1.textContent = input1.value;
+        value2.textContent = input2.value;
+        value3.textContent = input3.value;
+
+        input1.addEventListener("input", (event) => {
+          value1.textContent = event.target.value;
+        });
+        input2.addEventListener("input", (event) => {
+          value2.textContent = event.target.value;
+        });
+        input3.addEventListener("input", (event) => {
+          value3.textContent = event.target.value;
         });
     </script>
 {% endblock %}
