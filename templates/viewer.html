@@ -8,12 +8,18 @@
     <li class="nav-item">
         <a class="nav-link active" aria-current="page" href="/">Home</a>
     </li>
-    <li class="nav-item">
-        <a class="nav-link active" aria-current="page" href="/export">Export as PNG</a>
-    </li>
+    <li class="nav-item">Viewing: {{ filename }}</li>
 {% endblock %}
 
 {% block main %}
+    <form action="/export" method="post">
+        <p id="text_slice">Slice: <output id="value"></output></p>
+        <input id="slice" name="slice_index" type="range" min="0" max="{{ total_slices - 1 }}" step="1">
+        <input name="window_center" type="range" >
+        <input name="window_width" type="range">
+        <input type="submit" value="Export as PNG">
+    </form>
+
     <img src="data:image/png;base64,{{ image_data }}" 
          alt="Imagen DICOM"
          id="image"
@@ -22,8 +28,20 @@
     <p>Imagen procesada desde archivo DICOM</p>
 {% endblock %}
 
-{% if export %}
+{% block script %}
+
+    {% if export %}
+        <script>
+            alert("Image exported succesfully in {{ export }}")
+        </script>
+    {% endif %}
+
     <script>
-        alert("Image exported succesfully")
+        const value = document.querySelector("#value");
+        const input = document.querySelector("#slice");
+        value.textContent = input.value;
+        input.addEventListener("input", (event) => {
+          value.textContent = event.target.value;
+        });
     </script>
-{% endif %}
+{% endblock %}
