@@ -185,44 +185,6 @@ class DicomProcessor:
 
         return info
 
-    def export_to_downloads(self, slice_index=0, window_center=None, window_width=None):
-       
-        # 1. Obtener imagen procesada
-        image = self.process_slice_to_image(slice_index, window_center, window_width)
-        if image is None:
-            print("Error: No se pudo crear la imagen")
-            return None
-
-        # 2. Obtener ruta de la carpeta Downloads
-        downloads_path = _get_downloads_folder()
-
-        # 3. Crear nombre de archivo si no se proporciona
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        filename = f"dicom_slice_{slice_index}_{timestamp}.png"
-
-        # 4. Ruta completa
-        full_path = os.path.join(downloads_path, filename)
-
-        # 5. Guardar imagen
-        try:
-            image.save(full_path, format='PNG')
-            print(f"✓ Imagen guardada en: {full_path}")
-            return full_path
-        except Exception as e:
-            print(f"✗ Error guardando imagen: {e}")
-            return None
-
-def _get_downloads_folder():
-
-    # Para Windows
-    if os.name == 'nt':
-        downloads = os.path.join(os.environ['USERPROFILE'], 'Downloads')
-    # Para macOS/Linux
-    else:
-        downloads = os.path.join(os.path.expanduser('~'), 'Downloads')
-    # Crear carpeta si no existe
-    os.makedirs(downloads, exist_ok=True)
-    return downloads
 
 def bytes_to_base64(processed_image):
     buffered = io.BytesIO()
