@@ -1,18 +1,20 @@
-from flask import Flask, session, request, render_template
+from flask import Flask, session, request, render_template, jsonify, send_file
 from flask_session import Session
 import os
-from dicom import DicomProcessor, _get_downloads_folder, bytes_to_base64
+from dicom import DicomProcessor, bytes_to_base64, _get_downloads_folder
 import secrets
+import io
+import time
 
 # Configure application
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)
 
-@app.route("/")
-def index():
-    return render_template("index.html")
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SECRET_KEY'] = secrets.token_hex(32)
+Session(app)
+
     
-@app.route("/upload", methods=["GET", "POST"])
+@app.route("/", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
         # Obtain the file
@@ -50,12 +52,12 @@ def upload():
 
                 return render_template("viewer.html", image_data=img_str, filename=dicom_file.filename, total_slices=session['total_slices'])
             else:
-                return render_template("error.html", error_name="Could not read file")
+                return render_template("viewer.html", error="Could not read file")
 
         finally:
             pass
     else:
-        return render_template("upload.html")
+        return render_template("index.html")
 
 
 @app.route("/export", methods=["POST"])
@@ -63,9 +65,13 @@ def export():
     if 'dicom_filepath' not in session:
         return "Please upload a DICOM file first", 400
     
-    session['slice_index'] = int(request.form.get('slice_index'))
-    session['window_center'] = int(request.form.get('window_center'))
-    session['window_width'] = int(request.form.get('window_width'))
+    slice_index = int(request.form.get('slice_index', 0))
+    ww = int(request.form.get('window_width', 2000))
+    wc = int(request.form.get('window_center', 500))
+
+    session['slice_index'] = slice_index
+    session['window_center'] = wc
+    session['window_width'] = ww
 
     filepath = session['dicom_filepath']
 
@@ -79,11 +85,78 @@ def export():
     if not processor.load_dicom():
         return "Error loading DICOM file", 500
     
-    # Llamar a export_to_downloads
-    export_path = processor.export_to_downloads(
-        slice_index=session['slice_index'],
-        window_center=session['window_center'],  # O usa valores de la sesión si tienes
-        window_width=session['window_width']
+    image = processor.process_slice_to_image(
+            slice_index=slice_index,
+            window_center=wc,
+            window_width=ww
+        )
+    
+    # 2. Convertir a bytes
+    img_bytes = io.BytesIO()
+    image.save(img_bytes, format='PNG')
+    img_bytes.seek(0)
+    
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    filename = f"dicom_slice_{slice_index}_{timestamp}.png"
+
+    return send_file(
+        img_bytes,
+        mimetype='image/png',
+        as_attachment=True,
+        download_name=filename
     )
 
-    return True
+
+
+@app.route("/generate_image", methods=["POST"])
+def generate_image():
+    if 'dicom_filepath' not in session:
+        return jsonify({"success": False, "error": "No file uploaded"}), 400
+    
+    # Obtain data from json
+    try:
+        data = request.get_json();
+        
+        slice_index = int(data.get("slice_index"))
+        ww = int(data.get("window_width"))
+        wc = int(data.get("window_center"))
+
+        session["slice_index"] = slice_index
+        session["window_width"] = ww
+        session["window_center"] = wc
+
+        processor = DicomProcessor(session["dicom_filepath"])
+
+        if not processor.load_dicom():
+            return jsonify({"success": False, "error": "Faild to load DICOM"}), 500
+        
+        # Verufy that slice exits
+        total_slices = processor.get_total_slices()
+
+        if session["slice_index"] >= total_slices or slice_index < 0:
+            return jsonify({"success": False, 
+                            "error": f"Slice {slice_index} out of range 0-{total_slices - 1}"
+                            }), 400
+
+        # Generate image with new parameters
+        image = processor.process_slice_to_image(
+            slice_index = slice_index, 
+            window_center=wc, 
+            window_width=ww
+        )
+
+        if image is None:
+            return jsonify({'success': False, 'error': 'Failed to process image'}), 500
+        
+        img_str = bytes_to_base64(image)
+
+        return jsonify({
+            'success': True,
+            'image_data': img_str,
+            'slice_index': slice_index,
+            'window_center': wc,
+            'window_width': ww
+        })
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
