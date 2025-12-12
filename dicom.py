@@ -186,6 +186,18 @@ class DicomProcessor:
         return info
 
 
+def _get_downloads_folder():
+
+    # Para Windows
+    if os.name == 'nt':
+        downloads = os.path.join(os.environ['USERPROFILE'], 'Downloads')
+    # Para macOS/Linux
+    else:
+        downloads = os.path.join(os.path.expanduser('~'), 'Downloads')
+    # Crear carpeta si no existe
+    os.makedirs(downloads, exist_ok=True)
+    return downloads
+
 def bytes_to_base64(processed_image):
     buffered = io.BytesIO()
     processed_image.save(buffered, format="PNG")
