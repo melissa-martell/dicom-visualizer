@@ -27,14 +27,16 @@
         <input type="submit" value="Export as PNG">
     </form>
 
-    <img src="data:image/png;base64,{{ image_data }}" 
+    <div class="img-container">
+        <img src="data:image/png;base64,{{ image_data }}" 
          alt="Imagen DICOM"
-         id="image"
+         id="dicom_image"
          style="max-width: 100%; height: auto;">
+    </div>
     
     
 {% endblock %}
 
 {% block script %}
-    <script src="script.js"></script>
+    <script src="../static/script.js"></script>
 {% endblock %}
