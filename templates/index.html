@@ -4,7 +4,22 @@
     Upload
 {% endblock %}
 
+{% block nav_item %}
+    <li class="nav-item">
+        <a class="nav-link active" aria-current="page" href="/">Home</a>
+    </li>
+{% endblock %}
+
 {% block main %}
-    <h1>Welcome to DICOM Vista!</h1>
-    <a href="/upload">Upload File</a>
+
+    <h1>Welcome to DICOM Viewer</h1>
+
+    <form method="POST" action="/" enctype="multipart/form-data">
+        <input type="file" name="dicom_file" accept=".dcm">
+        <input type="submit" value="Upload">
+    </form>
+
+    {% if error %}
+        <p>Error: {{ error }}</p>
+    {% endif %}
 {% endblock %}
