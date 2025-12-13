@@ -1,7 +1,10 @@
 from flask import Flask, session, request, render_template, jsonify, send_file
 from flask_session import Session
+import pydicom
+import helpers
+import base64
+import numpy as np
 import os
-from dicom import DicomProcessor, bytes_to_base64, _get_downloads_folder
 import secrets
 import io
 import time
@@ -13,55 +16,83 @@ app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SECRET_KEY'] = secrets.token_hex(32)
 Session(app)
 
+# Global diccionary
+hu_array = {}
+
     
 @app.route("/", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
         # Obtain the file
         dicom_file = request.files["dicom_file"]
+        dicom_name = dicom_file.filename
 
         # Validate if the user input a file
-        error_msg = None
-        
-        if 'dicom_file' not in request.files:
-            error_msg = "No file field in request"
-        elif dicom_file.filename == '':
-            error_msg = "Please select a DICOM file"
-        elif not dicom_file.filename.lower().endswith('.dcm'):
-            error_msg = "File must be .dcm format"
+        error_msg = helpers.validate_input(dicom_file)
         
         if error_msg:
-            return render_template("upload.html", error=error_msg)
-
-        # Temporary storage to the archive
-        filepath = os.path.join(_get_downloads_folder(), dicom_file.filename)
-        dicom_file.save(filepath)
+            return jsonify({"success": False, "error": error_msg}), 500
 
         try:
-            processor = DicomProcessor(filepath)
-            if processor.load_dicom():
+            # Read dicom file
+            dicom_data = pydicom.dcmread(dicom_file)
+            # Anonymize dicom data
+            helpers.anonymize_dicom(dicom_data)
+            # Get dicom hu array
+            pixel_array = dicom_data.pixel_array
+            # Secret session id
+            session_id = secrets.token_hex(32)
+            
+            # Verify slices of dicom file
+            if len(pixel_array.shape) == 3:
+                total_slices = pixel_array.shape[0]
                 slice_index = 0
-                processed_image = processor.process_slice_to_image(slice_index=slice_index)
-
-                img_str = bytes_to_base64(processed_image)
-
-                 # GUARDAR EN SESIÓN (clave para exportar después)
-                session['dicom_filepath'] = filepath
-                session['original_filename'] = dicom_file.filename
-                session['total_slices'] = int(processor.get_total_slices())
-
-                return render_template("viewer.html", image_data=img_str, filename=dicom_file.filename, total_slices=session['total_slices'])
+                first_slice = pixel_array[0]
             else:
-                return render_template("viewer.html", error="Could not read file")
+                total_slices = 1
+                slice_index = 0
+                first_slice = pixel_array
 
-        finally:
-            pass
+            # Storage small data on session
+            session["filename"] = dicom_name
+            session["total_slices"] = total_slices
+            session["slice_index"] = slice_index
+            session["session_id"] = session_id
+
+            # Storage uh values on global dictionary
+            hu_array[session_id] = {
+                                "pixel_array": pixel_array,
+                                "filename": dicom_name,
+                                "timestamp": time.time()
+                                }
+
+            # Convert npy array into int16
+            int16_slice = first_slice.astype(np.int16)
+            bytes_slice = int16_slice.tobytes()
+            base64_slice = base64.b64encode(bytes_slice).decode("ascii")
+            
+            return jsonify({"success": True, 
+                            "session_id": session_id,
+                            "first_slice_b64": base64_slice,
+                            "shape": first_slice.shape,
+                            "dtype": "int16",
+                            "filename": dicom_name,
+                            "total_slices": total_slices
+                            })
+
+        except Exception as e:
+            # Registrar el error en el servidor
+            app.logger.error(f"Error processing DICOM file: {str(e)}")
+            return jsonify({
+                "success": False,
+                "error": "Could not process the DICOM file. Please ensure it is a valid DICOM file."
+                }), 500
     else:
         return render_template("index.html")
 
 
-@app.route("/export", methods=["POST"])
-def export():
+#@app.route("/export", methods=["POST"])
+#def export():
     if 'dicom_filepath' not in session:
         return "Please upload a DICOM file first", 400
     
@@ -108,8 +139,8 @@ def export():
 
 
 
-@app.route("/generate_image", methods=["POST"])
-def generate_image():
+#@app.route("/generate_image", methods=["POST"])
+#def generate_image():
     if 'dicom_filepath' not in session:
         return jsonify({"success": False, "error": "No file uploaded"}), 400
     
