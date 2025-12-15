@@ -20,19 +20,35 @@ const width = shape[1];
 const heigth = shape[0];
 const pixel_array_b64 = data["first_slice_b64"];
 
+// Add max atribute to slices
+document.getElementById("slice").max = total_slices - 1;
+
 // Canvas
 const canvas = document.getElementById("dicom_image");
 const ctx = canvas.getContext("2d");
 canvas.width = width;
 canvas.height = heigth;
 
-const current_slice_hu = decodeHUFromBase64(pixel_array_b64);
+let current_slice_hu = decodeHUFromBase64(pixel_array_b64);
 
-const windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
+let windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
 
+// Change inputs value and apply windowing
+document.getElementById("slice").addEventListener("input", function() {
+    value_slice.textContent = this.value;
+    // Logic to get new slice
+    getNewSlice(this.value);
+});
 
+document.getElementById("window_center").addEventListener("input", function() {
+    value_wc.textContent = this.value;
+    // Logic to change windowing and change slice
+});
 
-
+document.getElementById("window_width").addEventListener("input", function() {
+    value_ww.textContent = this.value;
+    // Logic to change windowing and change slice
+});
 
 
 // Decode HU from base64
@@ -83,4 +99,38 @@ function applyWindowingAndDisplay(wc, ww) {
     }
 
     ctx.putImageData(imageData, 0, 0);
+}
+
+async function getNewSlice(slice_index) {
+    try {
+        const response = await fetch("/get_slice", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                "session_id": session_id,
+                "slice_index": slice_index
+            })
+        });
+
+        if(!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if(result.success) {
+            const new_hu_array = decodeHUFromBase64(result.slice_b64);
+            current_slice_hu = new_hu_array;
+            updateWindowing();
+        }
+        else {
+            document.querySelector("#error").textContent = result.error;
+        }
+    }
+    catch(error) {
+        console.error("Error fetching new slice:", error);
+        document.querySelector("#error").textContent = `Error fetching slice: ${error.message}`;
+    }
 }
