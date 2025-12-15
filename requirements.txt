@@ -3,7 +3,3 @@ flask_session
 pydicom
 numpy 
 pillow
-pylibjpeg
-os
-pathlib
-time
