@@ -13,27 +13,29 @@
 
 {% block main %}
     <form action="/export" method="post">
-        <p id="text_slice">Slice: <output id="value1"></output></p>
-        <input id="slice" name="slice_index" type="range" min="0" max="{{ total_slices - 1 }}" step="1" value="0">
+        <p id="text_slice">Slice: <output id="value_slice"></output></p>
+        <input id="slice" name="slice_index" type="range" min="0" step="1" value="0">
         
-        <p id="window_center_label">Window Center (Brigth): <output id="value2"></output></p>
+        <p id="window_center_label">Window Center (Brigth): <output id="value_wc"></output></p>
         <input type="range" id="window_center" name="window_center" 
                min="-1000" max="3000" step="10" value="500">
         
-        <p id="window_width_label">Window Width (Contrast): <output id="value3"></output></p>
+        <p id="window_width_label">Window Width (Contrast): <output id="value_ww"></output></p>
         <input type="range" id="window_width" name="window_width" 
                min="1" max="4000" step="10" value="2000">
         
-        <input type="submit" value="Export as PNG">
+        <input id="export_btn" type="submit" value="Export as PNG">
     </form>
 
+    <div id="error"></div>
+
     <div class="img-container">
-        <canvas id="dicom_image" width="512px" height="512px"></canvas>
+        <canvas id="dicom_image"></canvas>
     </div>
     
     
 {% endblock %}
 
 {% block script %}
-    <script src="../static/script.js"></script>
+    <script src="../static/viewer.js"></script>
 {% endblock %}

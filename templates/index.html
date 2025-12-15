@@ -15,11 +15,13 @@
     <h1>Welcome to DICOM Viewer</h1>
 
     <form method="POST" action="/" enctype="multipart/form-data">
-        <input type="file" name="dicom_file" accept=".dcm">
-        <input type="submit" value="Upload">
+        <input id="dicom_file" type="file" name="dicom_file" accept=".dcm">
+        <input id="submit_btn" type="submit" value="Upload">
     </form>
 
-    {% if error %}
-        <p>Error: {{ error }}</p>
-    {% endif %}
+    <p id="error"></p>
+{% endblock %}
+
+{% block script %}
+    <script src="../static/upload.js"></script>
 {% endblock %}
