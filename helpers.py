@@ -1,3 +1,6 @@
+import base64
+import numpy as np
+
 def validate_input(dicom_file):
     error_msg = None
 
@@ -25,3 +28,10 @@ def anonymize_dicom(dicom):
             dicom.dicom_file[tag].value = 'ANONYMOUS'
     print("Datos del paciente anonimizados")
     return True
+
+def get_base64(array):
+    int16_slice = array.astype(np.int16)
+    bytes_slice = int16_slice.tobytes()
+    base64_slice = base64.b64encode(bytes_slice).decode("ascii")
+    
+    return base64_slice        
