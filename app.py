@@ -2,8 +2,6 @@ from flask import Flask, session, request, render_template, jsonify, send_file
 from flask_session import Session
 import pydicom
 import helpers
-import base64
-import numpy as np
 import os
 import secrets
 import io
@@ -42,15 +40,15 @@ def upload():
             pixel_array = dicom_data.pixel_array
             # Secret session id
             session_id = secrets.token_hex(32)
+            # Slice index
+            slice_index = 0
             
-            # Verify slices of dicom file
+
             if len(pixel_array.shape) == 3:
                 total_slices = pixel_array.shape[0]
-                slice_index = 0
                 first_slice = pixel_array[0]
             else:
                 total_slices = 1
-                slice_index = 0
                 first_slice = pixel_array
 
             # Storage small data on session
@@ -66,10 +64,8 @@ def upload():
                                 "timestamp": time.time()
                                 }
 
-            # Convert npy array into int16
-            int16_slice = first_slice.astype(np.int16)
-            bytes_slice = int16_slice.tobytes()
-            base64_slice = base64.b64encode(bytes_slice).decode("ascii")
+            # Convert npy array into base64
+            base64_slice = helpers.get_base64(first_slice)
             
             return jsonify({"success": True, 
                             "session_id": session_id,
@@ -90,6 +86,39 @@ def upload():
     else:
         return render_template("index.html")
 
+@app.route("/get_slice", methods=["POST"])
+def get_slice():
+    try:
+        data = request.get_json()
+        session_id = data.get("session_id")
+
+        if session_id not in hu_array:
+            return jsonify({"success": False,
+                            "error": "Session expired. Please upload file again."
+                            }), 400
+
+        slice_index = data.get("slice_index")
+
+        if slice_index < 0 or slice_index > session["total_slices"] - 1:
+            return jsonify({"success": False,
+                            "error": "Could not get slice index."
+                            }), 400
+
+        session_dict = hu_array[session_id]
+        pixel_array = session_dict[pixel_array]
+        n_slice = pixel_array[slice_index]
+
+        base64_slice = helpers.get_base64(n_slice)
+
+        return jsonify({"success": True, 
+                        "session_id": session_id,
+                        "slice_b64": base64_slice,
+                        })
+    
+    except Exception as e:
+        return jsonify({"success": False,
+                        "error": f"Internal server error: {str(e)}"
+                        }), 500
 
 #@app.route("/export", methods=["POST"])
 #def export():
