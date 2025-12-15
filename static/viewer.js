@@ -35,6 +35,15 @@ let current_slice_hu = decodeHUFromBase64(pixel_array_b64);
 
 let windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
 
+document.getElementById("export_btn").addEventListener("click", function(event) {
+    event.preventDefault();
+    const current_slice = parseInt(document.getElementById("slice").value);
+    const current_wc = parseFloat(input_wc_el.value);
+    const current_ww = parseFloat(input_ww_el.value);
+
+    exportView(current_slice, current_ww, current_wc);
+});
+
 // Change inputs value and apply windowing
 document.getElementById("slice").addEventListener("input", function() {
     value_slice.textContent = this.value;
@@ -54,7 +63,6 @@ document.getElementById("window_width").addEventListener("input", function() {
     // Logic to change windowing
     updateWindowing();
 });
-
 
 // Decode HU from base64
 function  decodeHUFromBase64(base64String) {
@@ -148,5 +156,38 @@ async function getNewSlice(slice_index) {
     catch(error) {
         console.error("Error fetching new slice:", error);
         document.querySelector("#error").textContent = `Error fetching slice: ${error.message}`;
+    }
+}
+
+// Export as PNG
+async function exportView(slice, ww, wc) {
+    const export_data = {
+        session_id: session_id,
+        current_slice: slice,
+        wc: wc,
+        ww: ww
+    };
+
+    try {
+        const response = await fetch("/export", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json" 
+            },
+            body: JSON.stringify(export_data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(`Successful export. ${result.message}`);
+            // Opcional: Redirigir o descargar un archivo si Flask lo genera
+        } else {
+            alert(`Export error: ${result.error}`);
+        }
+    }
+    catch (error) {
+        console.error("Error during export:", error);
+        alert("Server connection error.");
     }
 }
