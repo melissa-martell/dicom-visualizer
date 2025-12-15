@@ -2,6 +2,7 @@ from flask import Flask, session, request, render_template, jsonify, send_file
 from flask_session import Session
 import pydicom
 import helpers
+import time
 import secrets
 
 # Configure application
@@ -14,6 +15,9 @@ Session(app)
 # Global diccionary
 hu_array = {}
 
+@app.before_request
+def before_request_hook():
+    helpers.cleanup_expired_sessions(hu_array)
     
 @app.route("/", methods=["GET", "POST"])
 def upload():
@@ -57,7 +61,7 @@ def upload():
             # Storage uh values on global dictionary
             hu_array[session_id] = {
                                 "pixel_array": pixel_array,
-                                "filename": dicom_name,
+                                "timestamp": time.time()
                                 }
 
             # Convert npy array into base64
@@ -144,11 +148,14 @@ def export():
         if len(pixel_array.shape) == 3:
             pixel_array = pixel_array[slice_index]
 
-        helpers.apply_windowing_and_save_png(pixel_array, wc, ww)
+        output_path = helpers.apply_windowing_and_save_png(pixel_array, wc, ww)
 
-        return jsonify({"success": True, 
-                        "message": f"View parameters saved for slice {slice_index}."
-                        })
+        return send_file(
+            output_path,
+            as_attachment=True,
+            mimetype='image/png',
+            download_name=f"DICOM_Slice_{slice_index}_WC{wc}_WW{ww}.png"
+        )
     
     except Exception as e:
         app.logger.error(f"Error during export: {str(e)}")
