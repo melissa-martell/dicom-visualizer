@@ -1,5 +1,8 @@
 import base64
 import numpy as np
+from PIL import Image
+import os
+import uuid
 
 def validate_input(dicom_file):
     error_msg = None
@@ -24,8 +27,8 @@ def anonymize_dicom(dicom):
         (0x0008, 0x0081),  # Institution Address
     ]
     for tag in tags_to_remove:
-        if tag in dicom.dicom_file:
-            dicom.dicom_file[tag].value = 'ANONYMOUS'
+        if tag in dicom:
+            dicom[tag].value = 'ANONYMOUS'
     print("Datos del paciente anonimizados")
     return True
 
@@ -35,3 +38,26 @@ def get_base64(array):
     base64_slice = base64.b64encode(bytes_slice).decode("ascii")
     
     return base64_slice        
+
+def apply_windowing_and_save_png(current_hu_slice, wc, ww):
+    window_min = wc - ww / 2.0
+    window_max = wc + ww / 2.0
+
+    hu_float = current_hu_slice.astype(np.float32)
+    clamped_hu = np.clip(hu_float, window_min, window_max)
+    normalized_slice = (clamped_hu - window_min) / ww
+    final_grayscale_array = (normalized_slice * 255).astype(np.uint8)
+
+    output_dir = os.path.join(os.getcwd(), 'exports')
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    filename = f"export_{uuid.uuid4()}.png"
+    output_path = os.path.join(output_dir, filename)
+
+    img = Image.fromarray(final_grayscale_array, mode='L')
+
+    img.save(output_path)
+    
+    return output_path
