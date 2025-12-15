@@ -3,6 +3,9 @@ import numpy as np
 from PIL import Image
 import os
 import uuid
+import time
+
+SESSION_TIMEOUT = 3600
 
 def validate_input(dicom_file):
     error_msg = None
@@ -61,3 +64,20 @@ def apply_windowing_and_save_png(current_hu_slice, wc, ww):
     img.save(output_path)
     
     return output_path
+
+def cleanup_expired_sessions(hu_array):
+    """Elimina las sesiones de hu_array que excedan el tiempo de espera."""
+    current_time = time.time()
+    
+    # Crear una lista de las claves (session_id) a eliminar
+    expired_sessions = []
+    
+    # Iterar sobre una copia de las claves para poder modificar el diccionario original
+    for session_id, session_data in hu_array.items():
+        if current_time - session_data.get("timestamp", 0) > SESSION_TIMEOUT:
+            expired_sessions.append(session_id)
+            
+    # Eliminar las sesiones expiradas
+    for session_id in expired_sessions:
+        del hu_array[session_id]
+        print(f"Limpiada la sesión expirada: {session_id}")
