@@ -7,8 +7,8 @@ const value_ww = document.getElementById("value_ww");
 const input_slice = parseInt(document.getElementById("slice").value);
 const input_wc_el = document.getElementById("window_center");
 const input_ww_el = document.getElementById("window_width");
-const input_wc = parseFloat(document.getElementById("window_center").value);
-const input_ww = parseFloat(document.getElementById("window_width").value);
+const input_wc = parseFloat(input_wc_el.value);
+const input_ww = parseFloat(input_ww_el.value);
 
 // Session Storage
 const data_json = sessionStorage.getItem("dicom_data");
@@ -177,13 +177,18 @@ async function exportView(slice, ww, wc) {
             body: JSON.stringify(export_data)
         });
 
-        const result = await response.json();
+        if (response.ok) {
+            alert("Export successful. Check your exports folder.");
+        } 
+        else {
+            const result = await response.json();
 
-        if (result.success) {
-            alert(`Successful export. ${result.message}`);
-            // Opcional: Redirigir o descargar un archivo si Flask lo genera
-        } else {
-            alert(`Export error: ${result.error}`);
+            if (result && result.error) {
+                alert(`Export error: ${result.error}`);
+            } 
+            else {
+                 alert(`Export error: Server returned status ${response.status}.`);
+            }
         }
     }
     catch (error) {
