@@ -5,6 +5,8 @@ const value_ww = document.getElementById("value_ww");
 
 // Inputs
 const input_slice = parseInt(document.getElementById("slice").value);
+const input_wc_el = document.getElementById("window_center");
+const input_ww_el = document.getElementById("window_width");
 const input_wc = parseFloat(document.getElementById("window_center").value);
 const input_ww = parseFloat(document.getElementById("window_width").value);
 
@@ -36,18 +38,21 @@ let windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
 // Change inputs value and apply windowing
 document.getElementById("slice").addEventListener("input", function() {
     value_slice.textContent = this.value;
+    let index_int = parseInt(this.value)
     // Logic to get new slice
-    getNewSlice(this.value);
+    getNewSlice(index_int);
 });
 
 document.getElementById("window_center").addEventListener("input", function() {
     value_wc.textContent = this.value;
-    // Logic to change windowing and change slice
+    // Logic to change windowing
+    updateWindowing();
 });
 
 document.getElementById("window_width").addEventListener("input", function() {
     value_ww.textContent = this.value;
-    // Logic to change windowing and change slice
+    // Logic to change windowing
+    updateWindowing();
 });
 
 
@@ -101,6 +106,17 @@ function applyWindowingAndDisplay(wc, ww) {
     ctx.putImageData(imageData, 0, 0);
 }
 
+function updateWindowing() {
+    const wc = parseFloat(input_wc_el.value);
+    const ww = parseFloat(input_ww_el.value);
+
+    if(ww == 0) {
+        return;
+    }
+
+    applyWindowingAndDisplay(wc, ww);
+}
+
 async function getNewSlice(slice_index) {
     try {
         const response = await fetch("/get_slice", {
@@ -109,8 +125,8 @@ async function getNewSlice(slice_index) {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                "session_id": session_id,
-                "slice_index": slice_index
+                session_id: session_id,
+                slice_index: slice_index
             })
         });
 
