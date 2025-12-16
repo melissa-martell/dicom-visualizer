@@ -54,21 +54,46 @@ document.getElementById("export_btn").addEventListener("click", function(event) 
     exportView(current_slice, current_ww, current_wc);
 });
 
-// Zoom in btn funcitionality
+// Zoom in btn functionality
 document.getElementById("zoom_in-btn").addEventListener("click", function(){
-    scale *= 1.2;
-    if(scale > 10) {
-        scale = 10;
+    const zoomFactor = 1.2;
+    const nextScale = scale * zoomFactor;
+
+    if (nextScale <= 10) {
+        // Punto de referencia: Centro del canvas
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Ajustamos el origen para que el zoom sea hacia el centro
+        originX = centerX - (centerX - originX) * zoomFactor;
+        originY = centerY - (centerY - originY) * zoomFactor;
+        
+        scale = nextScale;
+        constrainBoundaries()
+        renderImage();
     }
-    renderImage();
 });
 
-// Zoom out btn funcitionality
+// Zoom out btn functionality
 document.getElementById("zoom_out-btn").addEventListener("click", function(){
-    scale /= 1.2;
-    if(scale < 1.2) {
+    const zoomFactor = 1 / 1.2;
+    const nextScale = scale * zoomFactor;
+
+    if (nextScale >= 1) {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        originX = centerX - (centerX - originX) * zoomFactor;
+        originY = centerY - (centerY - originY) * zoomFactor;
+
+        scale = nextScale;
+    } else {
+        // Si bajamos de 1, reseteamos a la vista original
         scale = 1;
+        originX = 0;
+        originY = 0;
     }
+    constrainBoundaries()
     renderImage();
 });
 
@@ -150,6 +175,7 @@ window.addEventListener("mousemove", function(e) {
         let limiteY = canvas.width - (width * scale);
         if (originY < limiteY) originY = limiteY;
 
+        constrainBoundaries()
         renderImage();
     } 
 });
@@ -173,6 +199,30 @@ document.getElementById("window_width").addEventListener("input", function() {
     // Logic to change windowing
     updateWindowing();
 });
+
+// Center the image after zoom
+function constrainBoundaries() {
+    const scaledWidth = width * scale;
+    const scaledHeight = heigth * scale;
+
+    // EJE X
+    if (scaledWidth <= canvas.width) {
+        originX = (canvas.width - scaledWidth) / 2; // Mantener centrada
+    } else {
+        if (originX > 0) originX = 0;
+        let limiteX = canvas.width - scaledWidth;
+        if (originX < limiteX) originX = limiteX;
+    }
+
+    // EJE Y
+    if (scaledHeight <= canvas.height) {
+        originY = (canvas.height - scaledHeight) / 2; // Mantener centrada
+    } else {
+        if (originY > 0) originY = 0;
+        let limiteY = canvas.height - scaledHeight;
+        if (originY < limiteY) originY = limiteY;
+    }
+}
 
 // Decode HU from base64
 function  decodeHUFromBase64(base64String) {
@@ -242,7 +292,7 @@ function renderImage() {
     if(!currentImageData) return;
 
     // Clean canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.heigth);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save()
 
     ctx.translate(originX, originY);
