@@ -9,23 +9,23 @@
         <a class="nav-link active" aria-current="page" href="/">Home</a>
     </li>
     <li class="nav-item">Viewing: {{ filename }}</li>
+    <li class="nav-item">
+        <button id="export_btn" type="submit">Export as PN</button>
+    </li>
 {% endblock %}
 
 {% block main %}
-    <form action="/export" method="post">
-        <p id="text_slice">Slice: <output id="value_slice"></output></p>
-        <input id="slice" name="slice_index" type="range" min="0" step="1" value="0">
+    <p id="text_slice">Slice: <output id="value_slice"></output></p>
+    <input id="slice" name="slice_index" type="range" min="0" step="1" value="0">
+    
+    <p id="window_center_label">Window Center (Brigth): <output id="value_wc"></output></p>
+    <input type="range" id="window_center" name="window_center" 
+           min="-1000" max="3000" step="10" value="500">
+    
+    <p id="window_width_label">Window Width (Contrast): <output id="value_ww"></output></p>
+    <input type="range" id="window_width" name="window_width" 
+           min="1" max="4000" step="10" value="2000">
         
-        <p id="window_center_label">Window Center (Brigth): <output id="value_wc"></output></p>
-        <input type="range" id="window_center" name="window_center" 
-               min="-1000" max="3000" step="10" value="500">
-        
-        <p id="window_width_label">Window Width (Contrast): <output id="value_ww"></output></p>
-        <input type="range" id="window_width" name="window_width" 
-               min="1" max="4000" step="10" value="2000">
-        
-        <input id="export_btn" type="submit" value="Export as PNG">
-    </form>
 
     <div id="error"></div>
 
