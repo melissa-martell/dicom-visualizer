@@ -36,7 +36,6 @@ let current_slice_hu = decodeHUFromBase64(pixel_array_b64);
 let windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
 
 document.getElementById("export_btn").addEventListener("click", function(event) {
-    event.preventDefault();
     const current_slice = parseInt(document.getElementById("slice").value);
     const current_wc = parseFloat(input_wc_el.value);
     const current_ww = parseFloat(input_ww_el.value);
