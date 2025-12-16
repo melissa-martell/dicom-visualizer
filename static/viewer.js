@@ -30,11 +30,22 @@ const canvas = document.getElementById("dicom_image");
 const ctx = canvas.getContext("2d");
 canvas.width = width;
 canvas.height = heigth;
+let currentImageData = null;
+let scale = 1;
+let originX = 0;
+let originY = 0;
+
+// Panning variables
+let isDragging = false;
+let x_move = 0;
+let y_move = 0;
 
 let current_slice_hu = decodeHUFromBase64(pixel_array_b64);
 
 let windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
 
+
+// Export btn functionality
 document.getElementById("export_btn").addEventListener("click", function(event) {
     event.preventDefault();
     const current_slice = parseInt(document.getElementById("slice").value);
@@ -42,6 +53,106 @@ document.getElementById("export_btn").addEventListener("click", function(event) 
     const current_ww = parseFloat(input_ww_el.value);
 
     exportView(current_slice, current_ww, current_wc);
+});
+
+// Zoom in btn funcitionality
+document.getElementById("zoom_in-btn").addEventListener("click", function(){
+    scale *= 1.2;
+    if(scale > 10) {
+        scale = 10;
+    }
+    renderImage();
+});
+
+// Zoom out btn funcitionality
+document.getElementById("zoom_out-btn").addEventListener("click", function(){
+    scale /= 1.2;
+    if(scale < 1.2) {
+        scale = 1;
+    }
+    renderImage();
+});
+
+// Reset btn functionality
+document.getElementById("reset-btn").addEventListener("click", function(){
+    scale = 1;
+    originX = 0;
+    originY = 0;
+    renderImage();
+});
+
+// Wheel event
+canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+
+    const zoomSpeed = 0.1; // Un poco más lento para mejor control
+    const direction = e.deltaY < 0 ? 1 : -1;
+    const zoomFactor = 1 + (direction * zoomSpeed);
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Solo aplicamos la lógica de movimiento de origen si el zoom no está en el límite mínimo
+    if (!(scale <= 1 && direction === -1)) {
+        originX = mouseX - (mouseX - originX) * zoomFactor;
+        originY = mouseY - (mouseY - originY) * zoomFactor;
+        scale *= zoomFactor;
+    }
+
+    if (scale <= 1) {
+        scale = 1;
+        originX = 0;
+        originY = 0;
+    }
+    
+    if (scale > 10) scale = 10;
+
+    renderImage();
+
+}, { passive: false });
+
+// Panning
+canvas.addEventListener("mousedown", function(e) {
+    if(scale > 1) isDragging = true;
+
+    const rect = canvas.getBoundingClientRect();
+    x_move = e.clientX - rect.left;
+    y_move = e.clientY - rect.top;
+
+    canvas.style.cursor = 'grabbing'
+});
+
+canvas.addEventListener("mouseup", function(e) {
+    isDragging = false;
+    canvas.style.cursor = 'crosshair'
+});
+
+window.addEventListener("mousemove", function(e) {
+    const rect = canvas.getBoundingClientRect();
+
+    if(isDragging) {
+        let deltax = (e.clientX - rect.left) - x_move;
+        let deltay = (e.clientY - rect.top) - y_move;
+
+        x_move = e.clientX - rect.left;
+        y_move = e.clientY - rect.top;
+
+        originX += deltax;
+        originY += deltay;
+
+        // Control de fronteras X
+        if (originX > 0) originX = 0;
+        let limiteX = canvas.width - (width * scale);
+        if (originX < limiteX) originX = limiteX;
+
+        // Control de fronteras Y
+        if (originY > 0) originY = 0;
+        let limiteY = canvas.width - (width * scale);
+        if (originY < limiteY) originY = limiteY;
+
+        renderImage();
+    } 
 });
 
 // Change inputs value and apply windowing
@@ -111,9 +222,11 @@ function applyWindowingAndDisplay(wc, ww) {
         pixelData[index + 3] = 255; // A
     }
 
-    ctx.putImageData(imageData, 0, 0);
+    currentImageData = imageData;
+    renderImage();
 }
 
+// Update windowing
 function updateWindowing() {
     const wc = parseFloat(input_wc_el.value);
     const ww = parseFloat(input_ww_el.value);
@@ -123,6 +236,27 @@ function updateWindowing() {
     }
 
     applyWindowingAndDisplay(wc, ww);
+}
+
+// Show image
+function renderImage() {
+    if(!currentImageData) return;
+
+    // Clean canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.heigth);
+    ctx.save()
+
+    ctx.translate(originX, originY);
+    ctx.scale(scale, scale);
+
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = width;
+    tempCanvas.height = heigth;
+    tempCanvas.getContext("2d").putImageData(currentImageData, 0 , 0);
+
+    ctx.drawImage(tempCanvas, 0 ,0);
+
+    ctx.restore();
 }
 
 async function getNewSlice(slice_index) {
