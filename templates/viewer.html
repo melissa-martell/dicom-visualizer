@@ -1,5 +1,17 @@
 {% extends "layout.html" %}
 
+{% block head %}
+    <style>
+        #dicom_image {
+            cursor: zoom-in; /* Para saber que el área es interactiva */
+            display: block;
+            touch-action: none; /* Evita interferencias en pantallas táctiles */
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&icon_names=reset_settings,zoom_in,zoom_out&display=block" rel="stylesheet" >
+
+{% endblock %}
+
 {% block title %}
     Upload
 {% endblock %}
@@ -26,6 +38,25 @@
     <input type="range" id="window_width" name="window_width" 
            min="1" max="4000" step="10" value="2000">
         
+
+    <button id="zoom_in-btn">
+        <span class="material-symbols-outlined">
+        zoom_in
+        </span>
+    </button>
+
+    <button id="zoom_out-btn">
+        <span class="material-symbols-outlined">
+        zoom_out
+        </span>
+    </button>
+
+    <button id="reset-btn">
+        <span class="material-symbols-outlined">
+        reset_settings
+        </span>
+    </button>
+
 
     <div id="error"></div>
 
