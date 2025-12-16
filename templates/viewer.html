@@ -1,5 +1,15 @@
 {% extends "layout.html" %}
 
+{% block head %}
+    <style>
+        #dicom_image {
+            cursor: zoom-in; /* Para saber que el área es interactiva */
+            display: block;
+            touch-action: none; /* Evita interferencias en pantallas táctiles */
+        }
+    </style>
+{% endblock %}
+
 {% block title %}
     Upload
 {% endblock %}
@@ -26,6 +36,25 @@
         
         <input id="export_btn" type="submit" value="Export as PNG">
     </form>
+
+    <button id="zoom_in-btn">
+        <span class="material-symbols-outlined">
+        zoom_in
+        </span>
+    </button>
+
+    <button id="zoom_out-btn">
+        <span class="material-symbols-outlined">
+        zoom_out
+        </span>
+    </button>
+
+    <button id="reset-btn">
+        <span class="material-symbols-outlined">
+        reset_settings
+        </span>
+    </button>
+
 
     <div id="error"></div>
 
