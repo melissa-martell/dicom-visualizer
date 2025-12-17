@@ -92,11 +92,14 @@ document.getElementById("ruler_btn").addEventListener("click", function() {
     isDragging = false;
     hu_active = false;
     document.getElementById("hu_btn").classList.remove("active");
+    current_hu = null;
 
     // Start ruler
     ruler_active = true;
     dicom_image.style.cursor = "default";
     this.classList.toggle("active")
+
+    renderImage();
 
     // Check if it's not active
     if(!this.classList.contains("active")) {
