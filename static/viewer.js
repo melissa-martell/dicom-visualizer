@@ -159,20 +159,63 @@ canvas.addEventListener("mouseup", function(e) {
 });
 
 function drawLine(ctx, x1, y1, x2, y2) {
+    // 1. Cálculo de distancia real (en mm)
+    const distance = Math.sqrt(((x2 - x1) * spacing_x) ** 2 + ((y2 - y1) * spacing_y) ** 2);
+    const distStr = distance.toFixed(2) + " mm";
 
-    let distance = Math.sqrt(((x2- x1)*spacing_x)**2 + ((y2 - y1)*spacing_y)**2);
-    let distStr = distance.toFixed(2) + "mm";
-
+    // 2. Configuración de estilo y guardado de estado
+    ctx.save(); // Guardamos el estado para no afectar otros dibujos
+    
+    // Dibujamos la línea primero (sin sombras)
     ctx.beginPath();
     ctx.strokeStyle = "yellow";
-    ctx.lineWidth = 2;
-    ctx.fillStyle = "yellow";
-    ctx.font = (16 / scale) + "px Arial";
-    ctx.textAlign = "center"
-    ctx.fillText(distStr, x2, y2);
+    ctx.lineWidth = 2 / scale; // Grosor constante aunque haya zoom
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
-    ctx.stroke()
+    ctx.stroke();
+
+    // 3. Configuración del texto
+    const fontSize = 14 / scale;
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+
+    // Medimos el texto para el fondo
+    const textMetrics = ctx.measureText(distStr);
+    const padding = 6 / scale;
+    const rectWidth = textMetrics.width + padding * 2;
+    const rectHeight = fontSize + padding;
+
+    // 4. Lógica de posicionamiento al final con separación
+    // Calculamos el ángulo de la línea para empujar el tag en esa dirección
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const gap = 12 / scale; // Separación de la punta de la línea
+    
+    // El punto donde empezará el tag
+    const tagX = x2 + Math.cos(angle) * gap;
+    const tagY = y2 + Math.sin(angle) * gap;
+
+    // 5. Dibujo del fondo (Rectángulo)
+    ctx.shadowColor = "transparent"; // Sin sombra para el fondo
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)"; // Negro semitransparente
+    
+    // Dibujamos el rectángulo centrado verticalmente respecto a tagY
+    ctx.fillRect(
+        tagX - padding, 
+        tagY - rectHeight / 2, 
+        rectWidth, 
+        rectHeight
+    );
+
+    // 6. Dibujo del texto (Con sombra para contraste máximo)
+    ctx.shadowColor = "black";
+    ctx.shadowBlur = 4 / scale;
+    ctx.shadowOffsetX = 1 / scale;
+    ctx.shadowOffsetY = 1 / scale;
+    ctx.fillStyle = "white";
+    ctx.fillText(distStr, tagX, tagY);
+
+    ctx.restore(); // Restauramos el estado original del canvas
 }
 
 
