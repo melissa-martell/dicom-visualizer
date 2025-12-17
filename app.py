@@ -43,6 +43,9 @@ def upload():
             session_id = secrets.token_hex(32)
             # Slice index
             slice_index = 0
+            # Pixel Spacieng
+            spacing = dicom_data.get("PixelSpacing", [1.0, 1.0])
+            pixel_spacing = [float(s) for s in spacing]
             
 
             if len(pixel_array.shape) == 3:
@@ -57,6 +60,7 @@ def upload():
             session["total_slices"] = total_slices
             session["slice_index"] = slice_index
             session["session_id"] = session_id
+            session["pixel_spacing"] = pixel_spacing
 
             # Storage uh values on global dictionary
             hu_array[session_id] = {
@@ -73,7 +77,8 @@ def upload():
                             "shape": first_slice.shape,
                             "dtype": "int16",
                             "filename": dicom_name,
-                            "total_slices": total_slices
+                            "total_slices": total_slices,
+                            "pixel_spacing": pixel_spacing
                             })
 
         except Exception as e:
