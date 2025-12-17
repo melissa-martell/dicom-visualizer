@@ -21,6 +21,7 @@ const shape = data["shape"];
 const width = shape[1];
 const heigth = shape[0];
 const pixel_array_b64 = data["first_slice_b64"];
+const pixel_spacing = data["pixel_spacing"];
 
 // Add max atribute to slices
 document.getElementById("slice").max = total_slices - 1;
@@ -40,9 +41,139 @@ let isDragging = false;
 let x_move = 0;
 let y_move = 0;
 
+// Ruler Variables
+let spacing_x = pixel_spacing[0];
+let spacing_y = pixel_spacing[1];
+let currentMeasurement = null;
+let ruler_active = false;
+let isDrawing = false;
+
 let current_slice_hu = decodeHUFromBase64(pixel_array_b64);
 
 let windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
+
+// Ruler btn
+document.getElementById("ruler_btn").addEventListener("click", function() {
+    // Stop panning
+    isDragging = false;
+
+    // Start ruler
+    ruler_active = true;
+    dicom_image.style.cursor = "default";
+    this.classList.toggle("active")
+
+    // Check if it's not active
+    if(!this.classList.contains("active")) {
+        ruler_active = false;
+        currentMeasurement = null;
+        if(scale != 1) {
+            isDragging = true;
+        }
+        renderImage();
+        return;
+    }
+});
+
+
+canvas.addEventListener("mousedown", function(e) {
+    if(ruler_active) {
+        // Ruler
+        // Clean lines from canvas
+        currentMeasurement = null;
+        renderImage();
+
+        isDrawing = true;
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        currentMeasurement = {
+            x1: (mouseX - originX) / scale,
+            y1: (mouseY - originY) / scale,
+            x2: (mouseX - originX) / scale,
+            y2: (mouseY - originY) / scale
+        };
+    }
+    else if (scale > 1) {
+        // Panning
+        isDragging = true;
+
+        const rect = canvas.getBoundingClientRect();
+        x_move = e.clientX - rect.left;
+        y_move = e.clientY - rect.top;
+
+        canvas.style.cursor = 'grabbing';
+    }
+});
+
+canvas.addEventListener("mousemove", function(e) {
+    if(ruler_active && isDrawing) {
+        // Ruler
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        currentMeasurement.x2 = (mouseX - originX) / scale;
+        currentMeasurement.y2 = (mouseY - originY) / scale;
+
+        renderImage();
+    }
+    else if(isDragging) {
+        // Panning
+        const rect = canvas.getBoundingClientRect();
+        let deltax = (e.clientX - rect.left) - x_move;
+        let deltay = (e.clientY - rect.top) - y_move;
+
+        x_move = e.clientX - rect.left;
+        y_move = e.clientY - rect.top;
+
+        originX += deltax;
+        originY += deltay;
+
+        // Control de fronteras X
+        if (originX > 0) originX = 0;
+        let limiteX = canvas.width - (width * scale);
+        if (originX < limiteX) originX = limiteX;
+
+        // Control de fronteras Y
+        if (originY > 0) originY = 0;
+        let limiteY = canvas.width - (width * scale);
+        if (originY < limiteY) originY = limiteY;
+
+        constrainBoundaries()
+        renderImage();
+    } 
+});
+
+canvas.addEventListener("mouseup", function(e) {
+    if(ruler_active) {
+        // Ruler
+        isDrawing = false;
+    }
+    else {
+        // Panning
+        isDragging = false;
+        canvas.style.cursor = 'crosshair'
+    }
+});
+
+function drawLine(ctx, x1, y1, x2, y2) {
+
+    let distance = Math.sqrt(((x2- x1)*spacing_x)**2 + ((y2 - y1)*spacing_y)**2);
+    let distStr = distance.toFixed(2) + "mm";
+
+    ctx.beginPath();
+    ctx.strokeStyle = "yellow";
+    ctx.lineWidth = 2;
+    ctx.fillStyle = "yellow";
+    ctx.font = (16 / scale) + "px Arial";
+    ctx.textAlign = "center"
+    ctx.fillText(distStr, x2, y2);
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke()
+}
 
 
 // Export btn functionality
@@ -102,6 +233,7 @@ document.getElementById("reset-btn").addEventListener("click", function(){
     scale = 1;
     originX = 0;
     originY = 0;
+    currentMeasurement = null
     renderImage();
 });
 
@@ -135,50 +267,6 @@ canvas.addEventListener('wheel', function(e) {
     renderImage();
 
 }, { passive: false });
-
-// Panning
-canvas.addEventListener("mousedown", function(e) {
-    if(scale > 1) isDragging = true;
-
-    const rect = canvas.getBoundingClientRect();
-    x_move = e.clientX - rect.left;
-    y_move = e.clientY - rect.top;
-
-    canvas.style.cursor = 'grabbing'
-});
-
-canvas.addEventListener("mouseup", function(e) {
-    isDragging = false;
-    canvas.style.cursor = 'crosshair'
-});
-
-window.addEventListener("mousemove", function(e) {
-    const rect = canvas.getBoundingClientRect();
-
-    if(isDragging) {
-        let deltax = (e.clientX - rect.left) - x_move;
-        let deltay = (e.clientY - rect.top) - y_move;
-
-        x_move = e.clientX - rect.left;
-        y_move = e.clientY - rect.top;
-
-        originX += deltax;
-        originY += deltay;
-
-        // Control de fronteras X
-        if (originX > 0) originX = 0;
-        let limiteX = canvas.width - (width * scale);
-        if (originX < limiteX) originX = limiteX;
-
-        // Control de fronteras Y
-        if (originY > 0) originY = 0;
-        let limiteY = canvas.width - (width * scale);
-        if (originY < limiteY) originY = limiteY;
-
-        constrainBoundaries()
-        renderImage();
-    } 
-});
 
 // Change inputs value and apply windowing
 document.getElementById("slice").addEventListener("input", function() {
@@ -304,6 +392,10 @@ function renderImage() {
     tempCanvas.getContext("2d").putImageData(currentImageData, 0 , 0);
 
     ctx.drawImage(tempCanvas, 0 ,0);
+
+    if(currentMeasurement) {
+        drawLine(ctx, currentMeasurement.x1, currentMeasurement.y1, currentMeasurement.x2, currentMeasurement.y2);
+    }
 
     ctx.restore();
 }

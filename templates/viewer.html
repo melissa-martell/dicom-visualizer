@@ -7,8 +7,11 @@
             display: block;
             touch-action: none; /* Evita interferencias en pantallas táctiles */
         }
+        #ruler_btn:active, .active {
+            color: red;
+        }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&icon_names=reset_settings,zoom_in,zoom_out&display=block" rel="stylesheet" >
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&icon_names=restart_alt,square_foot,zoom_in,zoom_out&display=block" rel="stylesheet" >
 
 {% endblock %}
 
@@ -53,7 +56,13 @@
 
     <button id="reset-btn">
         <span class="material-symbols-outlined">
-        reset_settings
+        restart_alt
+        </span>
+    </button>
+
+    <button id="ruler_btn">
+        <span class="material-symbols-outlined">
+        square_foot
         </span>
     </button>
 
