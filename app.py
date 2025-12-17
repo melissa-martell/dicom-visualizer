@@ -1,5 +1,6 @@
 from flask import Flask, session, request, render_template, jsonify, send_file
 from flask_session import Session
+import numpy as np
 import pydicom
 import helpers
 import time
@@ -38,7 +39,7 @@ def upload():
             # Anonymize dicom data
             helpers.anonymize_dicom(dicom_data)
             # Get dicom hu array
-            pixel_array = dicom_data.pixel_array
+            pixel_array = dicom_data.pixel_array.astype(np.float32)
             # Secret session id
             session_id = secrets.token_hex(32)
             # Slice index
@@ -48,12 +49,14 @@ def upload():
             pixel_spacing = [float(s) for s in spacing]
             # Modality
             modality = dicom_data.get("Modality", "Unknown");
-            # Body part
-            body_part = dicom_data.get("BodyPartExamined","N/A")
             # Series Description
             series_description = dicom_data.get("SeriesDescription", "Unknown")
+            # Rescale values for CT
+            slope = float(dicom_data.get("RescaleSlope", 1))
+            intercept = float(dicom_data.get("RescaleIntercept", 0))
+            pixel_array = (pixel_array * slope) + intercept
+            pixel_array = pixel_array.astype(np.int16)
             
-
             if len(pixel_array.shape) == 3:
                 total_slices = pixel_array.shape[0]
                 first_slice = pixel_array[0]
@@ -86,7 +89,6 @@ def upload():
                             "total_slices": total_slices,
                             "pixel_spacing": pixel_spacing,
                             "modality": modality,
-                            "body_part": body_part,
                             "series_description": series_description
                             })
 

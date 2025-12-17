@@ -23,7 +23,6 @@ const heigth = shape[0];
 const pixel_array_b64 = data["first_slice_b64"];
 const pixel_spacing = data["pixel_spacing"];
 const modality = data["modality"];
-const body_part = data["body_part"];
 const series_description = data["series_description"];
 
 // Add max atribute to slices
@@ -31,7 +30,6 @@ document.getElementById("slice").max = total_slices - 1;
 
 // Add content to page
 document.getElementById("modality").textContent = "Modality: " + modality;
-document.getElementById("body_part").textContent = "Body Part: " + body_part;
 document.getElementById("series_description").textContent ="Series Description: " + series_description;
 
 // Canvas
@@ -56,14 +54,44 @@ let currentMeasurement = null;
 let ruler_active = false;
 let isDrawing = false;
 
+// HU variables
+let hu_active = false;
+let current_hu = null;
+
 let current_slice_hu = decodeHUFromBase64(pixel_array_b64);
 
 let windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
+
+// HU btn
+document.getElementById("hu_btn").addEventListener("click", function() {
+    isDragging = false;
+    ruler_active = false;
+    document.getElementById("ruler_btn").classList.remove("active");
+    currentMeasurement = null;
+
+    hu_active = true;
+    dicom_image.style.cursor = "default";
+    this.classList.toggle("active");
+    renderImage();
+
+    // Check if it's not active
+    if(!this.classList.contains("active")) {
+        hu_active = false;
+        current_hu = 0;
+        if(scale != 1) {
+            isDragging = true;
+        }
+        renderImage();
+        return;
+    }
+});
 
 // Ruler btn
 document.getElementById("ruler_btn").addEventListener("click", function() {
     // Stop panning
     isDragging = false;
+    hu_active = false;
+    document.getElementById("hu_btn").classList.remove("active");
 
     // Start ruler
     ruler_active = true;
@@ -74,6 +102,7 @@ document.getElementById("ruler_btn").addEventListener("click", function() {
     if(!this.classList.contains("active")) {
         ruler_active = false;
         currentMeasurement = null;
+        current_hu = null;
         if(scale != 1) {
             isDragging = true;
         }
@@ -81,7 +110,6 @@ document.getElementById("ruler_btn").addEventListener("click", function() {
         return;
     }
 });
-
 
 canvas.addEventListener("mousedown", function(e) {
     if(ruler_active) {
@@ -103,9 +131,30 @@ canvas.addEventListener("mousedown", function(e) {
             y2: (mouseY - originY) / scale
         };
     }
+    else if(hu_active) {
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        x = Math.floor((mouseX - originX) / scale);
+        y = Math.floor((mouseY - originY) / scale);
+
+        const index = (y * width) + x;
+        hu_value = current_slice_hu[index];
+
+        current_hu = {
+            x: x,
+            y: y,
+            value: hu_value
+        }
+
+        renderImage();
+        
+    }
     else if (scale > 1) {
         // Panning
         isDragging = true;
+        hu_active = false;
 
         const rect = canvas.getBoundingClientRect();
         x_move = e.clientX - rect.left;
@@ -165,6 +214,42 @@ canvas.addEventListener("mouseup", function() {
         canvas.style.cursor = 'crosshair'
     }
 });
+
+// Draw hu probe
+function draw_hu() {
+    ctx.save();
+
+    const unit = (data.modality === "CT") ? "HU" : "val";
+    const text = `${current_hu.value} ${unit}`;
+    const fontSize = 14 / scale;
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const metrics = ctx.measureText(text);
+    const padding = 6 / scale;
+    const rectW = metrics.width + padding * 2;
+    const rectH = fontSize + padding;
+
+    ctx.strokeStyle = "cyan";
+    ctx.lineWidth = 1 / scale;
+    ctx.beginPath();
+    ctx.moveTo(current_hu.x - 5 / scale, current_hu.y);
+    ctx.lineTo(current_hu.x + 5 / scale, current_hu.y);
+    ctx.moveTo(current_hu.x, current_hu.y - 5 / scale);
+    ctx.lineTo(current_hu.x, current_hu.y + 5 / scale);
+    ctx.stroke();
+
+    const tagY = current_hu.y - (rectH + 10 / scale);
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(current_hu.x - rectW / 2, tagY - rectH / 2, rectW, rectH);
+    
+    ctx.fillStyle = "cyan";
+    ctx.fillText(text, current_hu.x, tagY);
+
+    ctx.restore();
+}
 
 function drawLine(ctx, x1, y1, x2, y2) {
     // 1. Cálculo de distancia real (en mm)
@@ -446,6 +531,10 @@ function renderImage() {
 
     if(currentMeasurement) {
         drawLine(ctx, currentMeasurement.x1, currentMeasurement.y1, currentMeasurement.x2, currentMeasurement.y2);
+    }
+
+    if(current_hu) {
+        draw_hu();
     }
 
     ctx.restore();
