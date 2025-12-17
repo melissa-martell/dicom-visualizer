@@ -22,9 +22,17 @@ const width = shape[1];
 const heigth = shape[0];
 const pixel_array_b64 = data["first_slice_b64"];
 const pixel_spacing = data["pixel_spacing"];
+const modality = data["modality"];
+const body_part = data["body_part"];
+const series_description = data["series_description"];
 
 // Add max atribute to slices
 document.getElementById("slice").max = total_slices - 1;
+
+// Add content to page
+document.getElementById("modality").textContent = "Modality: " + modality;
+document.getElementById("body_part").textContent = "Body Part: " + body_part;
+document.getElementById("series_description").textContent ="Series Description: " + series_description;
 
 // Canvas
 const canvas = document.getElementById("dicom_image");
@@ -146,7 +154,7 @@ canvas.addEventListener("mousemove", function(e) {
     } 
 });
 
-canvas.addEventListener("mouseup", function(e) {
+canvas.addEventListener("mouseup", function() {
     if(ruler_active) {
         // Ruler
         isDrawing = false;

@@ -46,6 +46,12 @@ def upload():
             # Pixel Spacieng
             spacing = dicom_data.get("PixelSpacing", [1.0, 1.0])
             pixel_spacing = [float(s) for s in spacing]
+            # Modality
+            modality = dicom_data.get("Modality", "Unknown");
+            # Body part
+            body_part = dicom_data.get("BodyPartExamined","N/A")
+            # Series Description
+            series_description = dicom_data.get("SeriesDescription", "Unknown")
             
 
             if len(pixel_array.shape) == 3:
@@ -78,7 +84,10 @@ def upload():
                             "dtype": "int16",
                             "filename": dicom_name,
                             "total_slices": total_slices,
-                            "pixel_spacing": pixel_spacing
+                            "pixel_spacing": pixel_spacing,
+                            "modality": modality,
+                            "body_part": body_part,
+                            "series_description": series_description
                             })
 
         except Exception as e:
