@@ -66,7 +66,6 @@ def apply_windowing_and_save_png(current_hu_slice, wc, ww):
     return output_path
 
 def cleanup_expired_sessions(hu_array):
-    """Elimina las sesiones de hu_array que excedan el tiempo de espera."""
     current_time = time.time()
     
     # Crear una lista de las claves (session_id) a eliminar
@@ -80,4 +79,4 @@ def cleanup_expired_sessions(hu_array):
     # Eliminar las sesiones expiradas
     for session_id in expired_sessions:
         del hu_array[session_id]
-        print(f"Limpiada la sesión expirada: {session_id}")
+        print(f"Cleaning session expired: {session_id}")
