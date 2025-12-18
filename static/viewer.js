@@ -58,9 +58,25 @@ let isDrawing = false;
 let hu_active = false;
 let current_hu = null;
 
+// LUT varibles
+let lut_active = false;
+
 let current_slice_hu = decodeHUFromBase64(pixel_array_b64);
 
 let windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
+
+// LUT btn
+document.getElementById("lut-btn").addEventListener("click", function(){
+    lut_active = true;
+    this.classList.toggle("active");
+    updateWindowing();
+
+    if(!this.classList.contains("active")) {
+        lut_active = false;
+        updateWindowing();
+    }
+
+});
 
 // HU btn
 document.getElementById("hu_btn").addEventListener("click", function() {
@@ -373,6 +389,7 @@ document.getElementById("reset-btn").addEventListener("click", function(){
     originX = 0;
     originY = 0;
     currentMeasurement = null
+    current_hu = null;
     renderImage();
 });
 
@@ -488,6 +505,10 @@ function applyWindowingAndDisplay(wc, ww) {
             intensity_gray = Math.round(
                 ((current_slice_hu[i] - (wc- ww / 2)) / ww) * 255
             );
+        }
+
+        if(lut_active) {
+            intensity_gray = 255 - intensity_gray;
         }
 
         const index = i * 4;
