@@ -4,6 +4,10 @@
     Upload
 {% endblock %}
 
+{% block head %}
+    <link rel="stylesheet" href="../static/index.css">
+{% endblock %}
+
 {% block nav_item %}
     <li class="nav-item">
         <a class="nav-link active" aria-current="page" href="/">Home</a>
@@ -20,6 +24,14 @@
     </form>
 
     <p id="error"></p>
+
+    <div id="loading_overlay" class="loading_hidding">
+        <div class="loader_container">
+            <div class="spinner"></div>
+            <p>Processing DICOM file...</p>
+            <span class="loading_status">This can take a few seconds</span>
+        </div>
+    </div>
 {% endblock %}
 
 {% block script %}
