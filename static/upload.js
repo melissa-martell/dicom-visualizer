@@ -19,6 +19,10 @@ document.querySelector("#submit_btn").addEventListener("click", async function(e
 
     formData.append("dicom_file", file);
 
+    // Loading logic
+    const loading = document.getElementById("loading_overlay");
+    loading.classList.remove("loading_hidding");
+
     // Send data to server
     try{
         const response = await fetch("/", {
@@ -30,10 +34,12 @@ document.querySelector("#submit_btn").addEventListener("click", async function(e
 
         if(data.success) {
             sessionStorage.setItem("dicom_data", JSON.stringify(data));
+            loading.classList.add("loading_hidding");
             window.location.href = "/viewer";
         }
         else {
             document.querySelector("#error").textContent = data.error || "Upload failed";
+            loading.classList.add("loading_hidding");
         }
 
     }
