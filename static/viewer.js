@@ -61,6 +61,14 @@ let current_hu = null;
 // LUT varibles
 let lut_active = false;
 
+// ROI variables
+let roi_active = false;
+let current_roi = null;
+let isArc = false;
+let roi_values = null;
+let metrics = null;
+let finish_draw = true;
+
 let current_slice_hu = decodeHUFromBase64(pixel_array_b64);
 
 let windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
@@ -78,12 +86,41 @@ document.getElementById("lut-btn").addEventListener("click", function(){
 
 });
 
+// ROI btn
+document.getElementById("roi_btn").addEventListener("click", function() {
+    isDragging = false;
+    ruler_active = false;
+    hu_active = false;
+    document.getElementById("ruler_btn").classList.remove("active");
+    currentMeasurement = null;
+    document.getElementById("hu_btn").classList.remove("active");
+    current_hu = null;
+
+    roi_active = true;
+    dicom_image.style.cursor = "default";
+    this.classList.toggle("active");
+    renderImage();
+
+    // Check if it's not active
+    if(!this.classList.contains("active")) {
+        roi_active = false;
+        current_roi = null;
+        if(scale != 1) {
+            isDragging = true;
+        }
+        renderImage();
+        return;
+    }
+});
+
 // HU btn
 document.getElementById("hu_btn").addEventListener("click", function() {
     isDragging = false;
     ruler_active = false;
     document.getElementById("ruler_btn").classList.remove("active");
     currentMeasurement = null;
+    document.getElementById("roi_btn").classList.remove("active");
+    current_roi = null;
 
     hu_active = true;
     dicom_image.style.cursor = "default";
@@ -93,7 +130,7 @@ document.getElementById("hu_btn").addEventListener("click", function() {
     // Check if it's not active
     if(!this.classList.contains("active")) {
         hu_active = false;
-        current_hu = 0;
+        current_hu = null;
         if(scale != 1) {
             isDragging = true;
         }
@@ -109,6 +146,8 @@ document.getElementById("ruler_btn").addEventListener("click", function() {
     hu_active = false;
     document.getElementById("hu_btn").classList.remove("active");
     current_hu = null;
+    document.getElementById("roi_btn").classList.remove("active");
+    current_roi = null;
 
     // Start ruler
     ruler_active = true;
@@ -155,8 +194,8 @@ canvas.addEventListener("mousedown", function(e) {
         const rect = canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-        x = Math.floor((mouseX - originX) / scale);
-        y = Math.floor((mouseY - originY) / scale);
+        let x = Math.floor((mouseX - originX) / scale);
+        let y = Math.floor((mouseY - originY) / scale);
 
         const index = (y * width) + x;
         hu_value = current_slice_hu[index];
@@ -169,6 +208,26 @@ canvas.addEventListener("mousedown", function(e) {
 
         renderImage();
         
+    }
+    else if (roi_active) {
+        current_roi = null;
+        renderImage();
+
+        isArc = true;
+        finish_draw = false;
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        let centerX = (mouseX - originX) / scale;
+        let centerY = (mouseY - originY) / scale;
+
+        current_roi = {
+            centerX: centerX,
+            centerY: centerY,
+            radio: 0
+        }
+
     }
     else if (scale > 1) {
         // Panning
@@ -220,12 +279,31 @@ canvas.addEventListener("mousemove", function(e) {
         constrainBoundaries()
         renderImage();
     } 
+    else if(roi_active && isArc) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        let finalX = (mouseX - originX) / scale;
+        let finalY = (mouseY - originY) / scale;
+
+        const radio = Math.sqrt(((finalX - current_roi.centerX) * spacing_x) ** 2 + ((finalY - current_roi.centerY) * spacing_y) ** 2);
+
+        current_roi.radio = Math.floor(radio);
+
+        renderImage();
+    }
 });
 
 canvas.addEventListener("mouseup", function() {
     if(ruler_active) {
         // Ruler
         isDrawing = false;
+    }
+    else if(roi_active) {
+        metrics = calculateROIMetrics(current_roi);
+        finish_draw = true;
+        renderImage();
+        isArc = false;
     }
     else {
         // Panning
@@ -234,6 +312,117 @@ canvas.addEventListener("mouseup", function() {
     }
 });
 
+// Calculate ROI metrics
+function calculateROIMetrics(roi) {
+
+    if (!roi || roi.radio <= 0) {
+        return { mean: 0, min: 0, max: 0, area: 0 };
+    }
+    
+    let sum = 0;
+    let count = 0;
+    let min = Infinity;
+    let max = -Infinity;
+
+    // Determinamos los límites de la caja que contiene al círculo
+    const startX = Math.floor(roi.centerX - roi.radio);
+    const endX = Math.ceil(roi.centerX + roi.radio);
+    const startY = Math.floor(roi.centerY - roi.radio);
+    const endY = Math.ceil(roi.centerY + roi.radio);
+
+    for (let y = startY; y < endY; y++) {
+        for (let x = startX; x < endX; x++) {
+            // Verificar que el píxel esté dentro de la imagen
+            if (x >= 0 && x < width && y >= 0 && y < heigth) {
+                
+                // Teorema de Pitágoras: ¿Está el píxel dentro del círculo?
+                const dx = x - roi.centerX;
+                const dy = y - roi.centerY;
+                if (dx * dx + dy * dy <= roi.radio * roi.radio) {
+                    
+                    const val = current_slice_hu[y * width + x];
+                    
+                    sum += val;
+                    if (val < min) min = val;
+                    if (val > max) max = val;
+                    count++;
+                }
+            }
+        }
+    }
+
+    return {
+        mean: (sum / count).toFixed(2),
+        min: min,
+        max: max,
+        area: (count * spacing_x * spacing_y).toFixed(2) // Area en mm²
+    };
+}
+
+// Draw ROI
+function draw_roi() {
+    if (!current_roi) return;
+    ctx.save();
+    
+    // 4. Dibujar el círculo
+    ctx.beginPath();
+    ctx.arc(current_roi.centerX, current_roi.centerY, current_roi.radio, 0, 2 * Math.PI); 
+    ctx.strokeStyle = "#c3ff00";
+    ctx.lineWidth = 2 / scale;
+    ctx.stroke();
+
+    if(finish_draw) {
+        const unit = (data.modality === "CT") ? "HU" : "val";
+        
+        // Creamos un array de strings para manejar las líneas
+        const lines = [
+            `Max: ${metrics.max} ${unit}`,
+            `Min: ${metrics.min} ${unit}`,
+            `Mean: ${metrics.mean} ${unit}`,
+            `Area: ${metrics.area} mm²`
+        ];
+
+        const fontSize = 14 / scale;
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top"; // Cambiamos a top para facilitar el cálculo de filas
+
+        // 2. Calcular dimensiones del rectángulo contenedor
+        let maxTextWidth = 0;
+        lines.forEach(line => {
+            const w = ctx.measureText(line).width;
+            if (w > maxTextWidth) maxTextWidth = w;
+        });
+
+        const padding = 6 / scale;
+        const lineHeight = fontSize + (2 / scale);
+        const rectW = maxTextWidth + (padding * 2);
+        const rectH = (lineHeight * lines.length) + padding;
+
+        // 3. Posicionar el cuadro arriba del círculo
+        const margin = 10 / scale;
+        const rectX = current_roi.centerX - rectW / 2;
+        const rectY = current_roi.centerY - current_roi.radio - rectH - margin;
+
+        // 5. Dibujar el rectángulo de fondo
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(rectX, rectY, rectW, rectH);
+        ctx.lineWidth = 1 / scale;
+        ctx.strokeRect(rectX, rectY, rectW, rectH);
+
+        // 6. Dibujar cada línea de texto
+        ctx.fillStyle = "#fff";
+        ctx.shadowColor = "black";
+        ctx.shadowBlur = 4 / scale;
+        
+        lines.forEach((line, index) => {
+            const lineY = rectY + padding + (index * lineHeight);
+            ctx.fillText(line, current_roi.centerX, lineY);
+        });
+    }
+
+    ctx.restore();
+}
 // Draw hu probe
 function draw_hu() {
     ctx.save();
@@ -559,6 +748,12 @@ function renderImage() {
 
     if(current_hu) {
         draw_hu();
+    }
+
+    if(current_roi) {
+        if (current_roi.radio > 1) {
+            draw_roi();
+        }
     }
 
     ctx.restore();
