@@ -49,8 +49,14 @@ def upload():
             pixel_spacing = [float(s) for s in spacing]
             # Modality
             modality = dicom_data.get("Modality", "Unknown");
+            # Body part examined
+            body_part = dicom_data.get("BodyPartExamined", "Unknown")
             # Series Description
             series_description = dicom_data.get("SeriesDescription", "Unknown")
+            # Study Description
+            study_description = dicom_data.get("StudyDescription", "Unknown")
+            # Admitting Diagnosis
+            admitting_diagnoses = dicom_data.get("AdmittingDiagnosesDescription", "Unknown")
             # Rescale values for CT
             slope = float(dicom_data.get("RescaleSlope", 1))
             intercept = float(dicom_data.get("RescaleIntercept", 0))
@@ -89,7 +95,10 @@ def upload():
                             "total_slices": total_slices,
                             "pixel_spacing": pixel_spacing,
                             "modality": modality,
-                            "series_description": series_description
+                            "series_description": series_description,
+                            "study_description": study_description,
+                            "body_part": body_part,
+                            "admitting_diagnoses": admitting_diagnoses
                             })
 
         except Exception as e:

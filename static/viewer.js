@@ -24,6 +24,9 @@ const pixel_array_b64 = data["first_slice_b64"];
 const pixel_spacing = data["pixel_spacing"];
 const modality = data["modality"];
 const series_description = data["series_description"];
+const study_description = data["study_description"];
+const body_part = data["body_part"];
+const admitting_diagnoses = data["admitting_diagnoses"];
 
 // Add max atribute to slices
 document.getElementById("slice").max = total_slices - 1;
@@ -31,6 +34,9 @@ document.getElementById("slice").max = total_slices - 1;
 // Add content to page
 document.getElementById("modality").textContent = "Modality: " + modality;
 document.getElementById("series_description").textContent ="Series Description: " + series_description;
+document.getElementById("study_description").textContent ="Study Description: " + study_description;
+document.getElementById("body_part").textContent ="Body Part: " + body_part;
+document.getElementById("admitting_diagnoses").textContent ="Admitting Diagnoses: " + admitting_diagnoses;
 
 // Canvas
 const canvas = document.getElementById("dicom_image");

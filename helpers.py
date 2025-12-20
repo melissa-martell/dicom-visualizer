@@ -32,7 +32,6 @@ def anonymize_dicom(dicom):
     for tag in tags_to_remove:
         if tag in dicom:
             dicom[tag].value = 'ANONYMOUS'
-    print("Datos del paciente anonimizados")
     return True
 
 def get_base64(array):

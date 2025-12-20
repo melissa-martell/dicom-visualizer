@@ -23,69 +23,100 @@
     <li class="nav-item">
         <a class="nav-link active" aria-current="page" href="/">Home</a>
     </li>
-    <li class="nav-item">Viewing: {{ filename }}</li>
-    <li id="modality"></li>
-    <li id="series_description"></li>
+    <li class="nav-item nav-link desactive">Viewing: {{ filename }}</li>
     <li class="nav-item">
-        <button id="export_btn" type="submit">Export as PN</button>
+        <button id="export_btn" class="nav-link" type="submit">Export as PN</button>
     </li>
 {% endblock %}
 
 {% block main %}
-    <p id="text_slice">Slice: <output id="value_slice"></output></p>
-    <input id="slice" name="slice_index" type="range" min="0" step="1" value="0">
     
-    <p id="window_center_label">Window Center (Brigth): <output id="value_wc"></output></p>
-    <input type="range" id="window_center" name="window_center" 
-           min="-1000" max="3000" step="10" value="500">
-    
-    <p id="window_width_label">Window Width (Contrast): <output id="value_ww"></output></p>
-    <input type="range" id="window_width" name="window_width" 
-           min="1" max="4000" step="10" value="2000">
         
 
-    <button id="zoom_in-btn">
-        <span class="material-symbols-outlined">
-        zoom_in
-        </span>
-    </button>
+    <div class="tools_container">
+        <div class="slice_container">
+            <h3>Slice Control</h3>
+            <div class="range_flex">
+                <p id="text_slice">Slice: <output id="value_slice"></output></p>
+                <input id="slice" name="slice_index" type="range" min="0" step="1" value="0">
+            </div>
+        </div>
+        <div class="windowing_container">
+            <h3>Medical Windowing</h3>
+            <div class="windowing_flex">
+                <p id="window_center_label">Window Center (Brigth): <output id="value_wc"></output></p>
+                <input type="range" id="window_center" name="window_center" 
+                       min="-1000" max="3000" step="10" value="500">
 
-    <button id="zoom_out-btn">
-        <span class="material-symbols-outlined">
-        zoom_out
-        </span>
-    </button>
+                <p id="window_width_label">Window Width (Contrast): <output id="value_ww"></output></p>
+                <input type="range" id="window_width" name="window_width" 
+                       min="1" max="4000" step="10" value="2000">
+            </div>
+        </div>
+        <div class="img_manipulation_container">
+            <h3>Image Manipulation Tools</h3>
+            <div class="manipulation__btn_flex">
+                <button id="zoom_in-btn">
+                    <span class="material-symbols-outlined">
+                    zoom_in
+                    </span>
+                </button>
 
-    <button id="lut-btn">
-        <span>
-        LUT
-        </span>
-    </button>
+                <button id="zoom_out-btn">
+                    <span class="material-symbols-outlined">
+                    zoom_out
+                    </span>
+                </button>
 
-    <button id="reset-btn">
-        <span class="material-symbols-outlined">
-        restart_alt
-        </span>
-    </button>
+                <button id="lut-btn">
+                    <span>
+                    LUT
+                    </span>
+                </button>
 
-    <button id="ruler_btn">
-        <span class="material-symbols-outlined">
-        square_foot
-        </span>
-    </button>
+                <button id="reset-btn">
+                    <span class="material-symbols-outlined">
+                    restart_alt
+                    </span>
+                </button>
+            </div>
+        </div>
 
-    <button id="hu_btn">
-        <span>
-        Value Probe
-        </span>
-    </button>
+        <div class="metrics_tools_container">
+            <h3>Measurement Tools</h3>
+            <div class="metrics_btn_flex">
+                <button id="ruler_btn">
+                    <span class="material-symbols-outlined">
+                    square_foot
+                    </span>
+                </button>
 
-    <button id="roi_btn">
-        <span>
-        ROI
-        </span>
-    </button>
+                <button id="hu_btn">
+                    <span>
+                    Value Probe
+                    </span>
+                </button>
 
+                <button id="roi_btn">
+                    <span>
+                    ROI
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <div class="info_container">
+            <h3>Image Information</h3>
+            <ul class="info_list">
+                <li id="modality"></li>
+                <li id="body_part"></li>
+                <li id="series_description"></li>
+                <li id="study_description"></li>
+                <li id="admitting_diagnoses"></li>
+            </ul>
+        </div>
+
+    </div>
 
     <div id="error"></div>
 
