@@ -585,7 +585,10 @@ document.getElementById("reset-btn").addEventListener("click", function(){
     originY = 0;
     currentMeasurement = null
     current_hu = null;
-    renderImage();
+    lut_active = false;
+    input_wc_el.value = 500;
+    input_ww_el.value = 2000;
+    updateWindowing();
 });
 
 // Wheel event
