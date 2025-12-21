@@ -177,7 +177,46 @@ document.getElementById("ruler_btn").addEventListener("click", function() {
     }
 });
 
+// Get real coordenates on canvas
+function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    
+    // 1. Relación de aspecto del contenido vs el contenedor
+    const contentRatio = canvas.width / canvas.height;
+    const containerRatio = rect.width / rect.height;
+    
+    let actualWidth, actualHeight, offsetX = 0, offsetY = 0;
+
+    // 2. Determinar las dimensiones reales de la imagen dentro del CSS contain
+    if (containerRatio > contentRatio) {
+        // El contenedor es más ancho que la imagen (bordes a los lados)
+        actualHeight = rect.height;
+        actualWidth = actualHeight * contentRatio;
+        offsetX = (rect.width - actualWidth) / 2;
+    } else {
+        // El contenedor es más alto que la imagen (bordes arriba/abajo)
+        actualWidth = rect.width;
+        actualHeight = actualWidth / contentRatio;
+        offsetY = (rect.height - actualHeight) / 2;
+    }
+
+    // 3. Posición relativa al área dibujada real
+    const visualX = (e.clientX - rect.left - offsetX);
+    const visualY = (e.clientY - rect.top - offsetY);
+
+    // 4. Factor de escala basado en el área dibujada, no en el rect total
+    const scaleX = canvas.width / actualWidth;
+    const scaleY = canvas.height / actualHeight;
+
+    return {
+        x: visualX * scaleX,
+        y: visualY * scaleY
+    };
+}
+
 canvas.addEventListener("mousedown", function(e) {
+    const mouse = getMousePos(e);
+
     if(ruler_active) {
         // Ruler
         // Clean lines from canvas
@@ -186,24 +225,16 @@ canvas.addEventListener("mousedown", function(e) {
 
         isDrawing = true;
 
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
         currentMeasurement = {
-            x1: (mouseX - originX) / scale,
-            y1: (mouseY - originY) / scale,
-            x2: (mouseX - originX) / scale,
-            y2: (mouseY - originY) / scale
+            x1: (mouse.x - originX) / scale,
+            y1: (mouse.y - originY) / scale,
+            x2: (mouse.x - originX) / scale,
+            y2: (mouse.y - originY) / scale
         };
     }
     else if(hu_active) {
-
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        let x = Math.floor((mouseX - originX) / scale);
-        let y = Math.floor((mouseY - originY) / scale);
+        let x = Math.floor((mouse.x - originX) / scale);
+        let y = Math.floor((mouse.y - originY) / scale);
 
         const index = (y * width) + x;
         hu_value = current_slice_hu[index];
@@ -224,11 +255,8 @@ canvas.addEventListener("mousedown", function(e) {
         isArc = true;
         finish_draw = false;
 
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        let centerX = (mouseX - originX) / scale;
-        let centerY = (mouseY - originY) / scale;
+        let centerX = (mouse.x - originX) / scale;
+        let centerY = (mouse.y - originY) / scale;
 
         current_roi = {
             centerX: centerX,
@@ -242,34 +270,30 @@ canvas.addEventListener("mousedown", function(e) {
         isDragging = true;
         hu_active = false;
 
-        const rect = canvas.getBoundingClientRect();
-        x_move = e.clientX - rect.left;
-        y_move = e.clientY - rect.top;
+        x_move = mouse.x;
+        y_move = mouse.y;
 
         canvas.style.cursor = 'grabbing';
     }
 });
 
 canvas.addEventListener("mousemove", function(e) {
+    const mouse = getMousePos(e);
+
     if(ruler_active && isDrawing) {
         // Ruler
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        currentMeasurement.x2 = (mouseX - originX) / scale;
-        currentMeasurement.y2 = (mouseY - originY) / scale;
+        currentMeasurement.x2 = (mouse.x - originX) / scale;
+        currentMeasurement.y2 = (mouse.y - originY) / scale;
 
         renderImage();
     }
     else if(isDragging) {
         // Panning
-        const rect = canvas.getBoundingClientRect();
-        let deltax = (e.clientX - rect.left) - x_move;
-        let deltay = (e.clientY - rect.top) - y_move;
+        let deltax = mouse.x - x_move;
+        let deltay = mouse.y - y_move;
 
-        x_move = e.clientX - rect.left;
-        y_move = e.clientY - rect.top;
+        x_move = mouse.x;
+        y_move = mouse.y;
 
         originX += deltax;
         originY += deltay;
@@ -281,18 +305,15 @@ canvas.addEventListener("mousemove", function(e) {
 
         // Control de fronteras Y
         if (originY > 0) originY = 0;
-        let limiteY = canvas.width - (width * scale);
+        let limiteY = canvas.height - (heigth * scale);
         if (originY < limiteY) originY = limiteY;
 
         constrainBoundaries()
         renderImage();
     } 
     else if(roi_active && isArc) {
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        let finalX = (mouseX - originX) / scale;
-        let finalY = (mouseY - originY) / scale;
+        let finalX = (mouse.x - originX) / scale;
+        let finalY = (mouse.y - originY) / scale;
 
         const radio = Math.sqrt(((finalX - current_roi.centerX) * spacing_x) ** 2 + ((finalY - current_roi.centerY) * spacing_y) ** 2);
 
@@ -589,6 +610,8 @@ document.getElementById("reset-btn").addEventListener("click", function(){
     
     input_wc_el.value = 500;
     input_ww_el.value = 2000;
+    value_wc.value = 500;
+    value_ww.value = 200;
 
     if(lut_active) {
         lut_active = false;
@@ -740,6 +763,7 @@ function applyWindowingAndDisplay(wc, ww) {
     }
 
     currentImageData = imageData;
+    constrainBoundaries();
     renderImage();
 }
 
@@ -786,6 +810,14 @@ function renderImage() {
             draw_roi();
         }
     }
+
+    // Obtener los componentes R, G, B del primer píxel (índices 0, 1, 2)
+    const r = currentImageData.data[0];
+    const g = currentImageData.data[1];
+    const b = currentImageData.data[2];
+    
+    // Aplicar el color al contenedor en formato CSS
+    document.getElementById("container-total").style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
 
     ctx.restore();
 }
