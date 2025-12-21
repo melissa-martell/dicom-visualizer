@@ -1,15 +1,5 @@
-document.querySelector("#submit_btn").addEventListener("click", async function(event) {
-    
-    event.preventDefault();
-
+async function fetchFile(file) {
     const formData = new FormData();
-    const Inputfile = document.querySelector("#dicom_file");
-    const file = Inputfile.files[0];
-
-    if (!file) {
-        document.querySelector("#error").textContent = "Please select a DICOM file";
-        return;
-    }
 
     // Validar extensión
     if (!file.name.toLowerCase().endsWith('.dcm')) {
@@ -46,7 +36,74 @@ document.querySelector("#submit_btn").addEventListener("click", async function(e
     catch(error) {
         document.querySelector("#error").textContent = `Error ${error}`;
     }
+}
 
+// INPUT FILE
+document.querySelector("#submit_btn").addEventListener("click", async function(event) {
     
+    event.preventDefault();
+
+    const Inputfile = document.querySelector("#dicom_file");
+    const file = Inputfile.files[0];
+
+    if (!file) {
+        document.querySelector("#error").textContent = "Please select a DICOM file";
+        return;
+    }
+
+    fetchFile(file);
+
 });
 
+// DRAG AND DROP FUNCTIONS
+async function dropHandler(ev) {
+    console.log("Dragged files...");
+    let file = null;
+
+    ev.preventDefault();
+
+    if (ev.dataTransfer.items) {
+      // Usar la interfaz DataTransferItemList para acceder a el/los archivos)
+      for (let i = 0; i < ev.dataTransfer.items.length; i++) {
+        // Si los elementos arrastrados no son ficheros, rechazarlos
+        if (ev.dataTransfer.items[i].kind === "file") {
+          file = ev.dataTransfer.items[i].getAsFile();
+        }
+      }
+    } 
+    else {
+      // Usar la interfaz DataTransfer para acceder a el/los archivos
+      for (var i = 0; i < ev.dataTransfer.files.length; i++) {
+        let file = ev.dataTransfer.files[i];
+      }
+    }
+
+    if (!file) {
+        document.querySelector("#error").textContent = "Please select a DICOM file";
+        return;
+    }
+    
+    fetchFile(file);
+
+    // Pasar el evento a removeDragData para limpiar
+    removeDragData(ev);
+}
+
+function dragOverHandler(ev) {
+  console.log("File(s) in drop zone");
+
+  // Prevent default behavior (Prevent file from being opened)
+  ev.preventDefault();
+}
+
+function removeDragData(ev) {
+  console.log("Removing drag data");
+
+  if (ev.dataTransfer.items) {
+    // Use DataTransferItemList interface to remove the drag data
+    ev.dataTransfer.items.clear();
+  } else {
+    // Use DataTransfer interface to remove the drag data
+    ev.dataTransfer.clearData();
+  }
+}
