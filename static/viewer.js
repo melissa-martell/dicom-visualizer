@@ -592,6 +592,11 @@ document.getElementById("reset-btn").addEventListener("click", function(){
     value_wc.value = 500;
     value_ww.value = 200;
 
+    document.getElementById("info_roi_container").style.display = "none";
+    document.getElementById("info_ruler_container").style.display = "none";
+    document.getElementById("info_probe_container").style.display = "none";
+
+
     if(lut_active) {
         lut_active = false;
         document.getElementById("lut-btn").classList.toggle("active-btn");
