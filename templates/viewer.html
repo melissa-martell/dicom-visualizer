@@ -1,18 +1,8 @@
 {% extends "layout.html" %}
 
 {% block head %}
-    <style>
-        #dicom_image {
-            cursor: zoom-in; /* Para saber que el área es interactiva */
-            display: block;
-            touch-action: none; /* Evita interferencias en pantallas táctiles */
-        }
-        #ruler_btn:active, #hu_btn:active, .active {
-            color: red;
-        }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&icon_names=restart_alt,square_foot,zoom_in,zoom_out&display=block" rel="stylesheet" >
-
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icons=loupe,circle,restart_alt,square_foot,invert_colors,zoom_in,zoom_out" />
+    <link rel="stylesheet" href="../static/viewer.css">
 {% endblock %}
 
 {% block title %}
@@ -23,105 +13,134 @@
     <li class="nav-item">
         <a class="nav-link active" aria-current="page" href="/">Home</a>
     </li>
-    <li class="nav-item nav-link desactive">Viewing: {{ filename }}</li>
+    <li class="nav-item nav-link desactive flex-grow-1">Viewing: {{ filename }}</li>
     <li class="nav-item">
-        <button id="export_btn" class="nav-link" type="submit">Export as PN</button>
+        <button id="export_btn" class="btn btn-primary" type="submit">Export as PNG</button>
     </li>
 {% endblock %}
 
 {% block main %}
-    
+
+    <div class="container-total">
         
-
-    <div class="tools_container">
-        <div class="slice_container">
-            <h3>Slice Control</h3>
-            <div class="range_flex">
-                <p id="text_slice">Slice: <output id="value_slice"></output></p>
-                <input id="slice" name="slice_index" type="range" min="0" step="1" value="0">
+        <div class="tools_container">
+            <div class="slice_container tool_container">
+                <h3 class="fs-6">Slice Control</h3>
+                <div class="range_flex">
+                    <p id="text_slice" class="p_label">Slice: <output id="value_slice">0</output></p>
+                    <input id="slice" name="slice_index" type="range" min="0" step="1" value="0">
+                </div>
             </div>
-        </div>
-        <div class="windowing_container">
-            <h3>Medical Windowing</h3>
-            <div class="windowing_flex">
-                <p id="window_center_label">Window Center (Brigth): <output id="value_wc"></output></p>
-                <input type="range" id="window_center" name="window_center" 
-                       min="-1000" max="3000" step="10" value="500">
+            <div class="windowing_container tool_container">
+                <h3 class="fs-6">Medical Windowing</h3>
+                <div class="windowing_flex">
+                    <p id="window_center_label" class="p_label">Window Center (Brigth): <output id="value_wc">500</output></p>
+                    <input type="range" id="window_center" name="window_center" 
+                           min="-1000" max="3000" step="10" value="500">
 
-                <p id="window_width_label">Window Width (Contrast): <output id="value_ww"></output></p>
-                <input type="range" id="window_width" name="window_width" 
-                       min="1" max="4000" step="10" value="2000">
+                    <p id="window_width_label" class="p_label">Window Width (Contrast): <output id="value_ww">2000</output></p>
+                    <input type="range" id="window_width" name="window_width" 
+                           min="1" max="4000" step="10" value="2000">
+                </div>
             </div>
-        </div>
-        <div class="img_manipulation_container">
-            <h3>Image Manipulation Tools</h3>
-            <div class="manipulation__btn_flex">
-                <button id="zoom_in-btn">
-                    <span class="material-symbols-outlined">
-                    zoom_in
-                    </span>
-                </button>
+            <div class="img_manipulation_container tool_container">
+                <h3 class="fs-6">Image Manipulation Tools</h3>
+                <div class="manipulation__btn_flex btn_flex">
+                    <div class="btn_container">
+                        <button id="zoom_in-btn">
+                            <span class="material-symbols-outlined btn_name">
+                            zoom_in
+                            </span>
+                        </button>
+                        <p>Zoom</p>
+                        <p>in</p>
+                    </div>
 
-                <button id="zoom_out-btn">
-                    <span class="material-symbols-outlined">
-                    zoom_out
-                    </span>
-                </button>
+                    <div class="btn_container">
+                        <button id="zoom_out-btn">
+                            <span class="material-symbols-outlined btn_name">
+                            zoom_out
+                            </span>
+                        </button>
+                        <p>Zoom</p>
+                        <p>out</p>
+                    </div>
 
-                <button id="lut-btn">
-                    <span>
-                    LUT
-                    </span>
-                </button>
+                    <div class="btn_container">
+                        <button id="lut-btn">
+                            <span class="material-symbols-outlined btn_name">
+                            invert_colors
+                            </span>
+                        </button>
+                        <p>LUT</p>
+                    </div>
 
-                <button id="reset-btn">
-                    <span class="material-symbols-outlined">
-                    restart_alt
-                    </span>
-                </button>
+                    <div class="btn_container">
+                        <button id="reset-btn">
+                            <span class="material-symbols-outlined btn_name">
+                            restart_alt
+                            </span>
+                        </button>
+                        <p>Restart</p>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div class="metrics_tools_container">
-            <h3>Measurement Tools</h3>
-            <div class="metrics_btn_flex">
-                <button id="ruler_btn">
-                    <span class="material-symbols-outlined">
-                    square_foot
-                    </span>
-                </button>
+            <div class="metrics_tools_container tool_container">
+                <h3 class="fs-6">Measurement Tools</h3>
+                <div class="metrics_btn_flex btn_flex">
+                    <div class="btn_container">
+                        <button id="ruler_btn">
+                            <span class="material-symbols-outlined btn_name">
+                            square_foot
+                            </span>
+                        </button>
+                        <p>Ruler</p>
+                    </div>
 
-                <button id="hu_btn">
-                    <span>
-                    Value Probe
-                    </span>
-                </button>
+                    <div class="btn_container">
+                        <button id="hu_btn">
+                            <span class="material-symbols-outlined btn_name">
+                            loupe
+                            </span>
+                        </button>
+                        <p>Probe</p>
+                        <p>value</p>
+                    </div>
 
-                <button id="roi_btn">
-                    <span>
-                    ROI
-                    </span>
-                </button>
+                    <div class="btn_container">
+                        <button id="roi_btn">
+                            <span class="material-symbols-outlined btn_name">
+                            circle
+                            </span>
+                        </button>
+                        <p>ROI</p>
+                    </div>
+                </div>
             </div>
+
+            <div class="info_container tool_container">
+                <h3 class="fs-6">Image Information</h3>
+                <div class="info_lists_container">
+                    <ul class="info_list1">
+                        <li id="modality" class="li_info"></li>
+                        <li id="body_part" class="li_info"></li>
+                        <li id="series_description" class="li_info"></li>
+                    </ul>
+                    <ul class="info_list2">
+                        <li id="study_description" class="li_info"></li>
+                        <li id="admitting_diagnoses" class="li_info"></li>
+                    </ul>
+                </div>
+            </div>
+
         </div>
 
-        <div class="info_container">
-            <h3>Image Information</h3>
-            <ul class="info_list">
-                <li id="modality"></li>
-                <li id="body_part"></li>
-                <li id="series_description"></li>
-                <li id="study_description"></li>
-                <li id="admitting_diagnoses"></li>
-            </ul>
+        <div id="error"></div>
+
+        <div class="img-container">
+            <canvas id="dicom_image"></canvas>
         </div>
-
-    </div>
-
-    <div id="error"></div>
-
-    <div class="img-container">
-        <canvas id="dicom_image"></canvas>
     </div>
     
     

@@ -82,10 +82,10 @@ let windowing_slice = applyWindowingAndDisplay(input_wc, input_ww);
 // LUT btn
 document.getElementById("lut-btn").addEventListener("click", function(){
     lut_active = true;
-    this.classList.toggle("active");
+    this.classList.toggle("active-btn");
     updateWindowing();
 
-    if(!this.classList.contains("active")) {
+    if(!this.classList.contains("active-btn")) {
         lut_active = false;
         updateWindowing();
     }
@@ -97,18 +97,18 @@ document.getElementById("roi_btn").addEventListener("click", function() {
     isDragging = false;
     ruler_active = false;
     hu_active = false;
-    document.getElementById("ruler_btn").classList.remove("active");
+    document.getElementById("ruler_btn").classList.remove("active-btn");
     currentMeasurement = null;
-    document.getElementById("hu_btn").classList.remove("active");
+    document.getElementById("hu_btn").classList.remove("active-btn");
     current_hu = null;
 
     roi_active = true;
     dicom_image.style.cursor = "default";
-    this.classList.toggle("active");
+    this.classList.toggle("active-btn");
     renderImage();
 
-    // Check if it's not active
-    if(!this.classList.contains("active")) {
+    // Check if it's not active-btn
+    if(!this.classList.contains("active-btn")) {
         roi_active = false;
         current_roi = null;
         if(scale != 1) {
@@ -123,18 +123,19 @@ document.getElementById("roi_btn").addEventListener("click", function() {
 document.getElementById("hu_btn").addEventListener("click", function() {
     isDragging = false;
     ruler_active = false;
-    document.getElementById("ruler_btn").classList.remove("active");
+    document.getElementById("ruler_btn").classList.remove("active-btn");
     currentMeasurement = null;
-    document.getElementById("roi_btn").classList.remove("active");
+    roi_active = false;
+    document.getElementById("roi_btn").classList.remove("active-btn");
     current_roi = null;
 
     hu_active = true;
     dicom_image.style.cursor = "default";
-    this.classList.toggle("active");
+    this.classList.toggle("active-btn");
     renderImage();
 
-    // Check if it's not active
-    if(!this.classList.contains("active")) {
+    // Check if it's not active-btn
+    if(!this.classList.contains("active-btn")) {
         hu_active = false;
         current_hu = null;
         if(scale != 1) {
@@ -150,20 +151,21 @@ document.getElementById("ruler_btn").addEventListener("click", function() {
     // Stop panning
     isDragging = false;
     hu_active = false;
-    document.getElementById("hu_btn").classList.remove("active");
+    document.getElementById("hu_btn").classList.remove("active-btn");
     current_hu = null;
-    document.getElementById("roi_btn").classList.remove("active");
+    roi_active = false;
+    document.getElementById("roi_btn").classList.remove("active-btn");
     current_roi = null;
 
     // Start ruler
     ruler_active = true;
     dicom_image.style.cursor = "default";
-    this.classList.toggle("active")
+    this.classList.toggle("active-btn")
 
     renderImage();
 
-    // Check if it's not active
-    if(!this.classList.contains("active")) {
+    // Check if it's not active-btn
+    if(!this.classList.contains("active-btn")) {
         ruler_active = false;
         currentMeasurement = null;
         current_hu = null;
@@ -310,6 +312,7 @@ canvas.addEventListener("mouseup", function() {
         finish_draw = true;
         renderImage();
         isArc = false;
+
     }
     else {
         // Panning
@@ -583,11 +586,30 @@ document.getElementById("reset-btn").addEventListener("click", function(){
     scale = 1;
     originX = 0;
     originY = 0;
-    currentMeasurement = null
-    current_hu = null;
-    lut_active = false;
+    
     input_wc_el.value = 500;
     input_ww_el.value = 2000;
+
+    if(lut_active) {
+        lut_active = false;
+        document.getElementById("lut-btn").classList.toggle("active-btn");
+    }
+    if(ruler_active) {
+        currentMeasurement = null
+        ruler_active = false;
+        document.getElementById("ruler_btn").classList.toggle("active-btn");
+    }
+    if(hu_active) {
+        current_hu = null;
+        hu_active = false;
+        document.getElementById("hu_btn").classList.toggle("active-btn");
+    }
+    if(roi_active) {
+        roi_active = false;
+        current_roi = null;
+        document.getElementById("roi_btn").classList.toggle("active-btn");
+    }
+
     updateWindowing();
 });
 
