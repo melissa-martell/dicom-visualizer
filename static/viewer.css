@@ -21,6 +21,16 @@ p {
     background-color: #000;
 }
 
+.navbar-nav {
+    width: 100%;
+}
+
+.btn-primary {
+    margin: 0;
+}
+
+/* IMAGE AND CANVAS */
+
 .img-container {
     width: 100%;
     max-width: 900px;
@@ -38,12 +48,17 @@ p {
     height: 100%;
 }
 
-.navbar-nav {
-    width: 100%;
-}
-
-.btn-primary {
-    margin: 0;
+.info_ruler_container,
+.info_roi_container,
+.info_probe_container {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #ff0;
+    padding: 5px 7px;
+    font-size: 1.05rem;
 }
 
 /* PANEL CONTROL */
@@ -112,7 +127,7 @@ button:active,
 }
 
 .li_info {
-    width: 300px;
+    max-width: 300px;
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
