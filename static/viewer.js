@@ -98,8 +98,10 @@ document.getElementById("roi_btn").addEventListener("click", function() {
     ruler_active = false;
     hu_active = false;
     document.getElementById("ruler_btn").classList.remove("active-btn");
+    document.getElementById("info_ruler_container").style.display = "none";
     currentMeasurement = null;
     document.getElementById("hu_btn").classList.remove("active-btn");
+    document.getElementById("info_probe_container").style.display = "none";
     current_hu = null;
 
     roi_active = true;
@@ -114,6 +116,7 @@ document.getElementById("roi_btn").addEventListener("click", function() {
         if(scale != 1) {
             isDragging = true;
         }
+        document.getElementById("info_roi_container").style.display = "none";
         renderImage();
         return;
     }
@@ -124,9 +127,11 @@ document.getElementById("hu_btn").addEventListener("click", function() {
     isDragging = false;
     ruler_active = false;
     document.getElementById("ruler_btn").classList.remove("active-btn");
+    document.getElementById("info_ruler_container").style.display = "none";
     currentMeasurement = null;
     roi_active = false;
     document.getElementById("roi_btn").classList.remove("active-btn");
+    document.getElementById("info_roi_container").style.display = "none";
     current_roi = null;
 
     hu_active = true;
@@ -141,6 +146,7 @@ document.getElementById("hu_btn").addEventListener("click", function() {
         if(scale != 1) {
             isDragging = true;
         }
+        document.getElementById("info_probe_container").style.display = "none";
         renderImage();
         return;
     }
@@ -152,9 +158,12 @@ document.getElementById("ruler_btn").addEventListener("click", function() {
     isDragging = false;
     hu_active = false;
     document.getElementById("hu_btn").classList.remove("active-btn");
+    document.getElementById("info_probe_container").style.display = "none";
     current_hu = null;
     roi_active = false;
     document.getElementById("roi_btn").classList.remove("active-btn");
+    document.getElementById("info_roi_container").style.display = "none";
+
     current_roi = null;
 
     // Start ruler
@@ -169,6 +178,7 @@ document.getElementById("ruler_btn").addEventListener("click", function() {
         ruler_active = false;
         currentMeasurement = null;
         current_hu = null;
+        document.getElementById("info_ruler_container").style.display = "none";
         if(scale != 1) {
             isDragging = true;
         }
@@ -218,9 +228,9 @@ canvas.addEventListener("mousedown", function(e) {
     const mouse = getMousePos(e);
 
     if(ruler_active) {
-        // Ruler
-        // Clean lines from canvas
         currentMeasurement = null;
+        document.getElementById("info_ruler_container").style.display = "none";
+
         renderImage();
 
         isDrawing = true;
@@ -233,6 +243,9 @@ canvas.addEventListener("mousedown", function(e) {
         };
     }
     else if(hu_active) {
+        current_hu = null;
+        document.getElementById("info_probe_container").style.display = "none";
+
         let x = Math.floor((mouse.x - originX) / scale);
         let y = Math.floor((mouse.y - originY) / scale);
 
@@ -250,6 +263,8 @@ canvas.addEventListener("mousedown", function(e) {
     }
     else if (roi_active) {
         current_roi = null;
+        document.getElementById("info_roi_container").style.display = "none";
+
         renderImage();
 
         isArc = true;
@@ -342,6 +357,38 @@ canvas.addEventListener("mouseup", function() {
     }
 });
 
+// Obtain real mouse coordenates
+function canvasToScreenPos(canvasX, canvasY) {
+    const rect = canvas.getBoundingClientRect();
+    
+    // 1. Aplicamos la transformación inversa de lo que dibujamos
+    // (Punto en el canvas -> Punto escalado y movido)
+    const transformedX = (canvasX * scale) + originX;
+    const transformedY = (canvasY * scale) + originY;
+
+    // 2. Ajustamos por el estiramiento del CSS (object-fit)
+    // Usamos el mismo cálculo de tu getMousePos para saber cuánto mide el contenido real
+    const contentRatio = canvas.width / canvas.height;
+    const containerRatio = rect.width / rect.height;
+    
+    let actualWidth, actualHeight, offsetX = 0, offsetY = 0;
+    if (containerRatio > contentRatio) {
+        actualHeight = rect.height;
+        actualWidth = actualHeight * contentRatio;
+        offsetX = (rect.width - actualWidth) / 2;
+    } else {
+        actualWidth = rect.width;
+        actualHeight = actualWidth / contentRatio;
+        offsetY = (rect.height - actualHeight) / 2;
+    }
+
+    // 3. Convertimos a coordenadas de pantalla relativas al viewport
+    const screenX = (transformedX * (actualWidth / canvas.width)) + rect.left + offsetX;
+    const screenY = (transformedY * (actualHeight / canvas.height)) + rect.top + offsetY;
+
+    return { x: screenX, y: screenY };
+}
+
 // Calculate ROI metrics
 function calculateROIMetrics(roi) {
 
@@ -397,7 +444,7 @@ function draw_roi() {
     // 4. Dibujar el círculo
     ctx.beginPath();
     ctx.arc(current_roi.centerX, current_roi.centerY, current_roi.radio, 0, 2 * Math.PI); 
-    ctx.strokeStyle = "#c3ff00";
+    ctx.strokeStyle = "#0ff";
     ctx.lineWidth = 2 / scale;
     ctx.stroke();
 
@@ -412,43 +459,18 @@ function draw_roi() {
             `Area: ${metrics.area} mm²`
         ];
 
-        const fontSize = 14 / scale;
-        ctx.font = `bold ${fontSize}px Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top"; // Cambiamos a top para facilitar el cálculo de filas
+        let real_metrics = canvasToScreenPos(current_roi.centerX, current_roi.centerY - current_roi.radio);
 
-        // 2. Calcular dimensiones del rectángulo contenedor
-        let maxTextWidth = 0;
-        lines.forEach(line => {
-            const w = ctx.measureText(line).width;
-            if (w > maxTextWidth) maxTextWidth = w;
-        });
+        document.getElementById("info_roi_container").style.display = "block";
+        document.getElementById("info_roi_container").style.top = (real_metrics.y - 70) + "px";
+        document.getElementById("info_roi_container").style.left = (real_metrics.x -60) + "px";
+        document.getElementById("info_roi_container").style.color = "#0ff";
+        const children = document.getElementById("info_roi_container").children;
 
-        const padding = 6 / scale;
-        const lineHeight = fontSize + (2 / scale);
-        const rectW = maxTextWidth + (padding * 2);
-        const rectH = (lineHeight * lines.length) + padding;
+        for(let i = 0; i < lines.length; i++) {
+            children[i].textContent = lines[i];
+        }
 
-        // 3. Posicionar el cuadro arriba del círculo
-        const margin = 10 / scale;
-        const rectX = current_roi.centerX - rectW / 2;
-        const rectY = current_roi.centerY - current_roi.radio - rectH - margin;
-
-        // 5. Dibujar el rectángulo de fondo
-        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-        ctx.fillRect(rectX, rectY, rectW, rectH);
-        ctx.lineWidth = 1 / scale;
-        ctx.strokeRect(rectX, rectY, rectW, rectH);
-
-        // 6. Dibujar cada línea de texto
-        ctx.fillStyle = "#fff";
-        ctx.shadowColor = "black";
-        ctx.shadowBlur = 4 / scale;
-        
-        lines.forEach((line, index) => {
-            const lineY = rectY + padding + (index * lineHeight);
-            ctx.fillText(line, current_roi.centerX, lineY);
-        });
     }
 
     ctx.restore();
@@ -459,32 +481,23 @@ function draw_hu() {
 
     const unit = (data.modality === "CT") ? "HU" : "val";
     const text = `${current_hu.value} ${unit}`;
-    const fontSize = 14 / scale;
-    ctx.font = `bold ${fontSize}px Arial`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
 
-    const metrics = ctx.measureText(text);
-    const padding = 6 / scale;
-    const rectW = metrics.width + padding * 2;
-    const rectH = fontSize + padding;
-
-    ctx.strokeStyle = "cyan";
+    ctx.strokeStyle = "#0f0";
     ctx.lineWidth = 1 / scale;
     ctx.beginPath();
-    ctx.moveTo(current_hu.x - 5 / scale, current_hu.y);
-    ctx.lineTo(current_hu.x + 5 / scale, current_hu.y);
-    ctx.moveTo(current_hu.x, current_hu.y - 5 / scale);
-    ctx.lineTo(current_hu.x, current_hu.y + 5 / scale);
+    ctx.moveTo(current_hu.x - 3 / scale, current_hu.y);
+    ctx.lineTo(current_hu.x + 3 / scale, current_hu.y);
+    ctx.moveTo(current_hu.x, current_hu.y - 3 / scale);
+    ctx.lineTo(current_hu.x, current_hu.y + 3 / scale);
     ctx.stroke();
 
-    const tagY = current_hu.y - (rectH + 10 / scale);
+    let real_metrics = canvasToScreenPos(current_hu.x, current_hu.y);
 
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.fillRect(current_hu.x - rectW / 2, tagY - rectH / 2, rectW, rectH);
-    
-    ctx.fillStyle = "cyan";
-    ctx.fillText(text, current_hu.x, tagY);
+    document.getElementById("info_probe_container").style.display = "block";
+    document.getElementById("info_probe_container").style.top = (real_metrics.y - 40) + "px";
+    document.getElementById("info_probe_container").style.left = (real_metrics.x - 40) + "px";
+    document.getElementById("info_probe_container").style.color = "#0f0";
+    document.getElementById("info_probe_container").textContent = text;
 
     ctx.restore();
 }
@@ -499,52 +512,18 @@ function drawLine(ctx, x1, y1, x2, y2) {
     
     // Dibujamos la línea primero (sin sombras)
     ctx.beginPath();
-    ctx.strokeStyle = "yellow";
+    ctx.strokeStyle = "#ff0";
     ctx.lineWidth = 2 / scale; // Grosor constante aunque haya zoom
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
 
-    // 3. Configuración del texto
-    const fontSize = 14 / scale;
-    ctx.font = `bold ${fontSize}px Arial`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
+    let real_metrics = canvasToScreenPos(x2, y2);
 
-    // Medimos el texto para el fondo
-    const textMetrics = ctx.measureText(distStr);
-    const padding = 6 / scale;
-    const rectWidth = textMetrics.width + padding * 2;
-    const rectHeight = fontSize + padding;
-
-    // 4. Lógica de posicionamiento al final con separación
-    // Calculamos el ángulo de la línea para empujar el tag en esa dirección
-    const angle = Math.atan2(y2 - y1, x2 - x1);
-    const gap = 12 / scale; // Separación de la punta de la línea
-    
-    // El punto donde empezará el tag
-    const tagX = x2 + Math.cos(angle) * gap;
-    const tagY = y2 + Math.sin(angle) * gap;
-
-    // 5. Dibujo del fondo (Rectángulo)
-    ctx.shadowColor = "transparent"; // Sin sombra para el fondo
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)"; // Negro semitransparente
-    
-    // Dibujamos el rectángulo centrado verticalmente respecto a tagY
-    ctx.fillRect(
-        tagX - padding, 
-        tagY - rectHeight / 2, 
-        rectWidth, 
-        rectHeight
-    );
-
-    // 6. Dibujo del texto (Con sombra para contraste máximo)
-    ctx.shadowColor = "black";
-    ctx.shadowBlur = 4 / scale;
-    ctx.shadowOffsetX = 1 / scale;
-    ctx.shadowOffsetY = 1 / scale;
-    ctx.fillStyle = "white";
-    ctx.fillText(distStr, tagX, tagY);
+    document.getElementById("info_ruler_container").style.display = "block";
+    document.getElementById("info_ruler_container").style.top = (real_metrics.y + 5) + "px";
+    document.getElementById("info_ruler_container").style.left = (real_metrics.x + 10) + "px";
+    document.getElementById("info_ruler_container").textContent = distStr;
 
     ctx.restore(); // Restauramos el estado original del canvas
 }
@@ -798,7 +777,9 @@ function renderImage() {
     ctx.drawImage(tempCanvas, 0 ,0);
 
     if(currentMeasurement) {
-        drawLine(ctx, currentMeasurement.x1, currentMeasurement.y1, currentMeasurement.x2, currentMeasurement.y2);
+        if(!(currentMeasurement.x1 - currentMeasurement.x2 == 0)) {
+            drawLine(ctx, currentMeasurement.x1, currentMeasurement.y1, currentMeasurement.x2, currentMeasurement.y2);
+        }
     }
 
     if(current_hu) {
