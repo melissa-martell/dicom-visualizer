@@ -63,16 +63,13 @@ async function dropHandler(ev) {
     ev.preventDefault();
 
     if (ev.dataTransfer.items) {
-      // Usar la interfaz DataTransferItemList para acceder a el/los archivos)
       for (let i = 0; i < ev.dataTransfer.items.length; i++) {
-        // Si los elementos arrastrados no son ficheros, rechazarlos
         if (ev.dataTransfer.items[i].kind === "file") {
           file = ev.dataTransfer.items[i].getAsFile();
         }
       }
     } 
     else {
-      // Usar la interfaz DataTransfer para acceder a el/los archivos
       for (var i = 0; i < ev.dataTransfer.files.length; i++) {
         let file = ev.dataTransfer.files[i];
       }
@@ -85,14 +82,12 @@ async function dropHandler(ev) {
     
     fetchFile(file);
 
-    // Pasar el evento a removeDragData para limpiar
     removeDragData(ev);
 }
 
 function dragOverHandler(ev) {
   console.log("File(s) in drop zone");
 
-  // Prevent default behavior (Prevent file from being opened)
   ev.preventDefault();
 }
 
@@ -100,10 +95,8 @@ function removeDragData(ev) {
   console.log("Removing drag data");
 
   if (ev.dataTransfer.items) {
-    // Use DataTransferItemList interface to remove the drag data
     ev.dataTransfer.items.clear();
   } else {
-    // Use DataTransfer interface to remove the drag data
     ev.dataTransfer.clearData();
   }
 }

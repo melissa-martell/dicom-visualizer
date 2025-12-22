@@ -102,7 +102,6 @@ def upload():
                             })
 
         except Exception as e:
-            # Registrar el error en el servidor
             app.logger.error(f"Error processing DICOM file: {str(e)}")
             return jsonify({
                 "success": False,

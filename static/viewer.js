@@ -624,7 +624,7 @@ document.getElementById("reset-btn").addEventListener("click", function(){
 canvas.addEventListener('wheel', function(e) {
     e.preventDefault();
 
-    const zoomSpeed = 0.1; // Un poco más lento para mejor control
+    const zoomSpeed = 0.1; 
     const direction = e.deltaY < 0 ? 1 : -1;
     const zoomFactor = 1 + (direction * zoomSpeed);
 
@@ -632,7 +632,6 @@ canvas.addEventListener('wheel', function(e) {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Solo aplicamos la lógica de movimiento de origen si el zoom no está en el límite mínimo
     if (!(scale <= 1 && direction === -1)) {
         originX = mouseX - (mouseX - originX) * zoomFactor;
         originY = mouseY - (mouseY - originY) * zoomFactor;
@@ -655,19 +654,16 @@ canvas.addEventListener('wheel', function(e) {
 document.getElementById("slice").addEventListener("input", function() {
     value_slice.textContent = this.value;
     let index_int = parseInt(this.value)
-    // Logic to get new slice
     getNewSlice(index_int);
 });
 
 document.getElementById("window_center").addEventListener("input", function() {
     value_wc.textContent = this.value;
-    // Logic to change windowing
     updateWindowing();
 });
 
 document.getElementById("window_width").addEventListener("input", function() {
     value_ww.textContent = this.value;
-    // Logic to change windowing
     updateWindowing();
 });
 
@@ -676,18 +672,16 @@ function constrainBoundaries() {
     const scaledWidth = width * scale;
     const scaledHeight = heigth * scale;
 
-    // EJE X
     if (scaledWidth <= canvas.width) {
-        originX = (canvas.width - scaledWidth) / 2; // Mantener centrada
+        originX = (canvas.width - scaledWidth) / 2; 
     } else {
         if (originX > 0) originX = 0;
         let limiteX = canvas.width - scaledWidth;
         if (originX < limiteX) originX = limiteX;
     }
 
-    // EJE Y
     if (scaledHeight <= canvas.height) {
-        originY = (canvas.height - scaledHeight) / 2; // Mantener centrada
+        originY = (canvas.height - scaledHeight) / 2; 
     } else {
         if (originY > 0) originY = 0;
         let limiteY = canvas.height - scaledHeight;
@@ -797,12 +791,11 @@ function renderImage() {
         }
     }
 
-    // Obtener los componentes R, G, B del primer píxel (índices 0, 1, 2)
+    //  R, G, B from first pixel (index 0, 1, 2)
     const r = currentImageData.data[0];
     const g = currentImageData.data[1];
     const b = currentImageData.data[2];
     
-    // Aplicar el color al contenedor en formato CSS
     document.getElementById("container-total").style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
 
     ctx.restore();

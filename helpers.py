@@ -18,7 +18,6 @@ def validate_input(dicom_file):
     return error_msg
 
 def anonymize_dicom(dicom):
-     # Lista de tags a anonimizar (códigos DICOM)
     tags_to_remove = [
         (0x0010, 0x0010),  # Patient Name
         (0x0010, 0x0020),  # Patient ID
@@ -67,15 +66,12 @@ def apply_windowing_and_save_png(current_hu_slice, wc, ww):
 def cleanup_expired_sessions(hu_array):
     current_time = time.time()
     
-    # Crear una lista de las claves (session_id) a eliminar
     expired_sessions = []
     
-    # Iterar sobre una copia de las claves para poder modificar el diccionario original
     for session_id, session_data in hu_array.items():
         if current_time - session_data.get("timestamp", 0) > SESSION_TIMEOUT:
             expired_sessions.append(session_id)
             
-    # Eliminar las sesiones expiradas
     for session_id in expired_sessions:
         del hu_array[session_id]
         print(f"Cleaning session expired: {session_id}")
