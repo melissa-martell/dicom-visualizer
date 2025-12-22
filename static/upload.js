@@ -56,22 +56,21 @@ document.querySelector("#submit_btn").addEventListener("click", async function(e
 });
 
 // DRAG AND DROP FUNCTIONS
-async function dropHandler(ev) {
-    console.log("Dragged files...");
+document.querySelector("#drop_zone").addEventListener("drop", async function(e) {
     let file = null;
 
-    ev.preventDefault();
+    e.preventDefault();
 
-    if (ev.dataTransfer.items) {
-      for (let i = 0; i < ev.dataTransfer.items.length; i++) {
-        if (ev.dataTransfer.items[i].kind === "file") {
-          file = ev.dataTransfer.items[i].getAsFile();
+    if (e.dataTransfer.items) {
+      for (let i = 0; i < e.dataTransfer.items.length; i++) {
+        if (e.dataTransfer.items[i].kind === "file") {
+          file = e.dataTransfer.items[i].getAsFile();
         }
       }
     } 
     else {
-      for (var i = 0; i < ev.dataTransfer.files.length; i++) {
-        let file = ev.dataTransfer.files[i];
+      for (var i = 0; i < e.dataTransfer.files.length; i++) {
+        file = e.dataTransfer.files[i];
       }
     }
 
@@ -82,21 +81,20 @@ async function dropHandler(ev) {
     
     fetchFile(file);
 
-    removeDragData(ev);
-}
+    removeDragData(e);
+})
 
-function dragOverHandler(ev) {
-  console.log("File(s) in drop zone");
+document.querySelector("#drop_zone").addEventListener("dragover", async function(e) {
+    e.preventDefault();
+});
 
-  ev.preventDefault();
-}
-
-function removeDragData(ev) {
+function removeDragData(e) {
   console.log("Removing drag data");
 
-  if (ev.dataTransfer.items) {
-    ev.dataTransfer.items.clear();
-  } else {
-    ev.dataTransfer.clearData();
+  if (e.dataTransfer.items) {
+    e.dataTransfer.items.clear();
+  } 
+  else {
+    e.dataTransfer.clearData();
   }
 }

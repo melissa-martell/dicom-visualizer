@@ -191,30 +191,25 @@ document.getElementById("ruler_btn").addEventListener("click", function() {
 function getMousePos(e) {
     const rect = canvas.getBoundingClientRect();
     
-    // 1. Relación de aspecto del contenido vs el contenedor
     const contentRatio = canvas.width / canvas.height;
     const containerRatio = rect.width / rect.height;
     
     let actualWidth, actualHeight, offsetX = 0, offsetY = 0;
 
-    // 2. Determinar las dimensiones reales de la imagen dentro del CSS contain
     if (containerRatio > contentRatio) {
-        // El contenedor es más ancho que la imagen (bordes a los lados)
         actualHeight = rect.height;
         actualWidth = actualHeight * contentRatio;
         offsetX = (rect.width - actualWidth) / 2;
-    } else {
-        // El contenedor es más alto que la imagen (bordes arriba/abajo)
+    } 
+    else {
         actualWidth = rect.width;
         actualHeight = actualWidth / contentRatio;
         offsetY = (rect.height - actualHeight) / 2;
     }
 
-    // 3. Posición relativa al área dibujada real
     const visualX = (e.clientX - rect.left - offsetX);
     const visualY = (e.clientY - rect.top - offsetY);
 
-    // 4. Factor de escala basado en el área dibujada, no en el rect total
     const scaleX = canvas.width / actualWidth;
     const scaleY = canvas.height / actualHeight;
 
@@ -361,13 +356,9 @@ canvas.addEventListener("mouseup", function() {
 function canvasToScreenPos(canvasX, canvasY) {
     const rect = canvas.getBoundingClientRect();
     
-    // 1. Aplicamos la transformación inversa de lo que dibujamos
-    // (Punto en el canvas -> Punto escalado y movido)
     const transformedX = (canvasX * scale) + originX;
     const transformedY = (canvasY * scale) + originY;
 
-    // 2. Ajustamos por el estiramiento del CSS (object-fit)
-    // Usamos el mismo cálculo de tu getMousePos para saber cuánto mide el contenido real
     const contentRatio = canvas.width / canvas.height;
     const containerRatio = rect.width / rect.height;
     
@@ -382,7 +373,6 @@ function canvasToScreenPos(canvasX, canvasY) {
         offsetY = (rect.height - actualHeight) / 2;
     }
 
-    // 3. Convertimos a coordenadas de pantalla relativas al viewport
     const screenX = (transformedX * (actualWidth / canvas.width)) + rect.left + offsetX;
     const screenY = (transformedY * (actualHeight / canvas.height)) + rect.top + offsetY;
 
@@ -628,13 +618,11 @@ canvas.addEventListener('wheel', function(e) {
     const direction = e.deltaY < 0 ? 1 : -1;
     const zoomFactor = 1 + (direction * zoomSpeed);
 
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    let mouse = getMousePos(e)
 
     if (!(scale <= 1 && direction === -1)) {
-        originX = mouseX - (mouseX - originX) * zoomFactor;
-        originY = mouseY - (mouseY - originY) * zoomFactor;
+        originX = mouse.x - (mouse.x - originX) * zoomFactor;
+        originY = mouse.y - (mouse.y - originY) * zoomFactor;
         scale *= zoomFactor;
     }
 
